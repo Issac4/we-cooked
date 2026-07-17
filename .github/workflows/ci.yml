@@ -1,0 +1,93 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  # GitHub Container Registry requires lowercase repository names
+  BACKEND_IMAGE_NAME: ghcr.io/issac4/we-cooked-backend
+  FRONTEND_IMAGE_NAME: ghcr.io/issac4/we-cooked-frontend
+
+jobs:
+  test:
+    name: Run Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Environment File
+        run: |
+          echo "DB_USER=recipe_admin" >> .env
+          echo "DB_PASS=SuperSecretTestPassword2026!" >> .env
+          echo "DB_NAME=recipe_db" >> .env
+          echo "SECRET_KEY=test_secret_key_for_ci_cd_runs_only_2026_actions" >> .env
+
+      - name: Build Docker Stack
+        run: docker compose build
+
+      - name: Start Docker Stack
+        run: docker compose up -d
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to spin up..."
+          sleep 10
+          docker compose ps
+
+      - name: Run Backend Tests
+        run: docker compose exec -T backend pytest
+
+      - name: Run Frontend Tests
+        run: docker compose exec -T frontend npm run test
+
+      - name: Run E2E Integration Tests
+        run: ./run-e2e.sh
+
+      - name: Teardown Stack
+        if: always()
+        run: docker compose down -v
+
+  build-and-publish:
+    name: Build & Publish Production Images
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE_NAME }}:latest
+            ${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Build & Push Frontend Image (Production Nginx target)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          target: production
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE_NAME }}:latest
+            ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
