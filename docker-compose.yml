@@ -1,0 +1,67 @@
+services:
+  # 0. Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    container_name: recipe_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  # 1. Database Service
+  db:
+    image: postgres:16-alpine
+    container_name: recipe_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. FastAPI Backend Service (NEW)
+  backend:
+    build: .
+    container_name: recipe_fastapi
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+      - uploads_data:/app/static/uploads
+    command: bash -c "alembic upgrade head && python seed.py && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      - DB_NAME=${DB_NAME}
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # 3. Adminer Service
+  adminer:
+    image: adminer
+    container_name: recipe_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+  uploads_data:
+
