@@ -324,5 +324,47 @@ describe('Recipe App Comprehensive Tests', () => {
         expect(screen.getByText(/My Recipes/i)).toBeInTheDocument()
       })
     })
+
+    it('empty state "Add Your First Recipe" button navigates to the Create Recipe page', async () => {
+      const user = userEvent.setup()
+      localStorage.setItem('recipe_token', 'mock-token')
+      
+      ;(fetch as any).mockImplementation((url: string) => {
+        if (url.includes('/auth/me')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              id: 1,
+              username: 'testuser',
+              email: 'test@example.com',
+              is_active: true,
+              is_admin: false,
+              created_at: new Date().toISOString()
+            })
+          })
+        }
+        if (url.includes('/recipes/')) {
+          if (url.includes('/recipes/add')) {
+            return Promise.resolve({ ok: false, status: 404 })
+          }
+          // Return empty array for recipes to trigger empty state
+          return Promise.resolve({ ok: true, json: async () => [] })
+        }
+        return Promise.reject(new Error(`Unexpected fetch: ${url}`))
+      })
+
+      render(<App />)
+
+      // 1. Verify we show "No recipes found" empty state and find the welcome button
+      const addFirstBtn = await screen.findByRole('link', { name: /Add Your First Recipe/i })
+      
+      // 2. Click the welcome button
+      await user.click(addFirstBtn)
+
+      // 3. Verify we navigate to "Create New Recipe" page
+      await waitFor(() => {
+        expect(screen.getByText('Create New Recipe')).toBeInTheDocument()
+      })
+    })
   })
 })

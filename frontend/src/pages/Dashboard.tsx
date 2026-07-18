@@ -223,7 +223,7 @@ function Dashboard() {
           </p>
           {!isFiltered && (
             <Link 
-              to="/recipe/add"
+              to="/add-recipe"
               className={cn(buttonVariants({ variant: "default" }), "bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-8")}
             >
               Add Your First Recipe
