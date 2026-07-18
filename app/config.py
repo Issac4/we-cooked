@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # Storage
     UPLOAD_DIR: str = "static/uploads"
     ALLOWED_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".webp"}
-    MAX_UPLOAD_SIZE_BYTES: int = 5 * 1024 * 1024  # 5MB
+    MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10MB
     ASSET_CLEANUP_WINDOW_SECONDS: int = 24 * 60 * 60  # Default 24 hours
 
     # CORS
