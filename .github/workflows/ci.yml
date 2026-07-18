@@ -88,6 +88,8 @@ jobs:
           context: ./frontend
           target: production
           push: true
+          build-args: |
+            VITE_API_URL=/api
           tags: |
             ${{ env.FRONTEND_IMAGE_NAME }}:latest
             ${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
