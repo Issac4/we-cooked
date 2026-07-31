@@ -21,7 +21,7 @@ export const BasicInfo = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <div className="space-y-2">
           <Label htmlFor="servings" className="flex items-center gap-2">
               <Plus className="w-4 h-4 text-slate-400" /> Servings

@@ -59,7 +59,7 @@ function Login() {
         <h1 className="text-3xl font-black tracking-tight text-slate-900">Recipe App</h1>
       </div>
 
-      <Card className="w-full max-w-md shadow-xl border-slate-200 rounded-3xl overflow-hidden">
+      <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-xl border-slate-200 rounded-3xl overflow-hidden">
         <CardHeader className="space-y-1 pb-8">
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
           <CardDescription>Enter your credentials to access your recipes</CardDescription>

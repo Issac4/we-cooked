@@ -56,7 +56,7 @@ function Register() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Recipe App</h1>
         </div>
 
-        <Card className="w-full max-w-md shadow-xl border-slate-200 rounded-[2.5rem] overflow-hidden bg-white">
+        <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-xl border-slate-200 rounded-[2.5rem] overflow-hidden bg-white">
           <CardHeader className="space-y-4 pb-8 flex flex-col items-center text-center p-8">
             <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center">
               <ShieldAlert className="w-8 h-8 text-amber-500" />

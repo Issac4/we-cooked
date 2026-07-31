@@ -16,10 +16,10 @@ export const IngredientEditor = () => {
           Ingredients
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-8">
+      <CardContent className="p-4 sm:p-6 lg:p-8">
         <div className="space-y-4">
           {ingredients.map((ing, idx) => (
-            <div key={idx} className="flex gap-4 items-start">
+            <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-start">
               <div className="flex-1">
                 <Input 
                   placeholder="Item (e.g. Flour)" 
@@ -27,23 +27,25 @@ export const IngredientEditor = () => {
                   onChange={(e) => handleUpdateIngredient(idx, 'item', e.target.value)}
                 />
               </div>
-              <div className="w-32">
-                <Input 
-                  placeholder="Amount" 
-                  value={ing.amount}
-                  onChange={(e) => handleUpdateIngredient(idx, 'amount', e.target.value)}
-                />
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 sm:w-32">
+                  <Input 
+                    placeholder="Amount" 
+                    value={ing.amount}
+                    onChange={(e) => handleUpdateIngredient(idx, 'amount', e.target.value)}
+                  />
+                </div>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  aria-label="Remove ingredient"
+                  onClick={() => handleRemoveIngredient(idx)}
+                  className="text-slate-400 hover:text-red-600 hover:bg-red-50 shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="icon" 
-                aria-label="Remove ingredient"
-                onClick={() => handleRemoveIngredient(idx)}
-                className="text-slate-400 hover:text-red-600 hover:bg-red-50 shrink-0"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
             </div>
           ))}
           <Button 

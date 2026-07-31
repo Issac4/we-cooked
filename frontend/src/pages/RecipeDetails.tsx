@@ -219,7 +219,7 @@ function RecipeDetails() {
       {/* Deletion Confirmation Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
             <CardHeader className="bg-red-50 border-b border-red-100 flex flex-row items-center justify-between py-4 px-6">
               <CardTitle className="text-red-700 flex items-center gap-2 text-lg font-bold">
                 <AlertTriangle className="w-5 h-5" />
@@ -234,7 +234,7 @@ function RecipeDetails() {
                 <CloseIcon className="w-4 h-4" />
               </Button>
             </CardHeader>
-            <CardContent className="p-8 space-y-6">
+            <CardContent className="p-4 sm:p-8 space-y-6">
               <div className="space-y-2">
                 <p className="text-slate-900 font-bold text-xl">Are you absolutely sure?</p>
                 <p className="text-slate-500 leading-relaxed">
@@ -275,7 +275,7 @@ function RecipeDetails() {
       {/* Log Meal Modal */}
       {showLogModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
             <CardHeader className="bg-blue-600 text-white flex flex-row items-center justify-between py-4 px-6">
               <CardTitle className="flex items-center gap-2 text-lg font-bold">
                 <HistoryIcon className="w-5 h-5" />
@@ -298,7 +298,7 @@ function RecipeDetails() {
                 <CloseIcon className="w-4 h-4" />
               </Button>
             </CardHeader>
-            <CardContent className="p-8">
+            <CardContent className="p-4 sm:p-8">
               <form onSubmit={handleLogMeal} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="cooked_date" className="text-xs font-black uppercase tracking-widest text-slate-400">Date Cooked</Label>
@@ -324,13 +324,13 @@ function RecipeDetails() {
                         type="button"
                         onClick={() => setNewLog({...newLog, rating: star})}
                         className={cn(
-                          "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
+                          "w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all",
                           newLog.rating >= star 
                             ? "bg-yellow-100 text-yellow-600 scale-105 shadow-sm" 
                             : "bg-slate-50 text-slate-300 hover:bg-slate-100"
                         )}
                       >
-                        <Star className={cn("w-6 h-6", newLog.rating >= star && "fill-current")} />
+                        <Star className={cn("w-5 h-5 sm:w-6 sm:h-6", newLog.rating >= star && "fill-current")} />
                       </button>
                     ))}
                   </div>
@@ -372,7 +372,7 @@ function RecipeDetails() {
       {/* Log Entry Deletion Confirmation Modal */}
       {showLogDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
             <CardHeader className="bg-red-50 border-b border-red-100 flex flex-row items-center justify-between py-4 px-6">
               <CardTitle className="text-red-700 flex items-center gap-2 text-lg font-bold">
                 <AlertTriangle className="w-5 h-5" />
@@ -425,22 +425,22 @@ function RecipeDetails() {
       )}
 
       {/* Hero Section / Header */}
-      <div className="bg-white border-b border-slate-200 mb-8 pt-8 pb-12 shadow-sm">
-        <div className="px-8">
-          <div className="flex justify-between items-center mb-6">
+      <div className="bg-white border-b border-slate-200 mb-8 pt-6 sm:pt-8 pb-8 sm:pb-12 shadow-sm">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <Link 
               to="/" 
-              className={cn(buttonVariants({ variant: "ghost" }), "-ml-4 text-slate-500 hover:text-blue-600 gap-2")}
+              className={cn(buttonVariants({ variant: "ghost" }), "-ml-2 text-slate-500 hover:text-blue-600 gap-2 w-fit")}
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Dashboard
             </Link>
 
             {isAuthenticated && !user?.is_admin && (
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <Link 
                   to={`/recipe/edit/${id}`}
-                  className={cn(buttonVariants({ variant: "outline" }), "rounded-full gap-2 text-slate-600 hover:text-blue-600 border-slate-200 shadow-sm")}
+                  className={cn(buttonVariants({ variant: "outline" }), "rounded-full gap-2 text-slate-600 hover:text-blue-600 border-slate-200 shadow-sm text-xs sm:text-sm")}
                 >
                   <Edit className="w-4 h-4" />
                   Edit Recipe
@@ -449,7 +449,7 @@ function RecipeDetails() {
                 <Button 
                   variant="outline"
                   onClick={() => setShowModal(true)}
-                  className="rounded-full gap-2 text-slate-400 hover:text-red-600 border-slate-200 shadow-sm transition-all"
+                  className="rounded-full gap-2 text-slate-400 hover:text-red-600 border-slate-200 shadow-sm transition-all text-xs sm:text-sm"
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete
@@ -462,15 +462,15 @@ function RecipeDetails() {
             <RecipeImage 
               src={recipe.cover_image_url} 
               alt={recipe.title}
-              containerClassName="mb-8 w-full h-96 rounded-[2.5rem] shadow-2xl shadow-blue-100 border-8 border-white"
+              containerClassName="mb-6 sm:mb-8 w-full h-56 sm:h-80 md:h-96 rounded-2xl sm:rounded-[2.5rem] shadow-xl border-4 sm:border-8 border-white"
             />
           )}
           
           <div className="space-y-6 w-full max-w-full">
             <div className="w-full max-w-full min-w-0">
               <div className="flex items-center gap-3 mb-3">
-                <ChefHat className="w-6 h-6 text-blue-600" />
-                <div className="flex gap-2">
+                <ChefHat className="w-6 h-6 text-blue-600 shrink-0" />
+                <div className="flex flex-wrap gap-2">
                   {recipe.proteins?.map(protein => (
                     <Badge key={protein} variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100">
                       {protein}
@@ -483,36 +483,36 @@ function RecipeDetails() {
                   ))}
                 </div>
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900 break-all leading-tight">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900 break-words leading-tight">
                 {recipe.title}
               </h1>
             </div>
             
-            <div className="flex flex-wrap gap-4 border-t border-slate-100 pt-6">
-              <div className="bg-slate-50 px-6 py-4 rounded-2xl border border-slate-100 shadow-sm text-center min-w-[120px]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border-t border-slate-100 pt-6">
+              <div className="bg-slate-50 px-3 sm:px-6 py-3 sm:py-4 rounded-2xl border border-slate-100 shadow-sm text-center">
                 <Users className="w-5 h-5 text-slate-400 mx-auto mb-1" />
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Servings</p>
-                <p className="text-xl font-black text-slate-900">{recipe.servings ?? 'N/A'}</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">Servings</p>
+                <p className="text-lg sm:text-xl font-black text-slate-900">{recipe.servings ?? 'N/A'}</p>
               </div>
               {(recipe.prep_time_mins !== undefined || recipe.cook_time_mins !== undefined) && (
-                <div className="bg-blue-50/50 px-6 py-4 rounded-2xl border border-blue-100 shadow-sm text-center min-w-[120px]">
+                <div className="bg-blue-50/50 px-3 sm:px-6 py-3 sm:py-4 rounded-2xl border border-blue-100 shadow-sm text-center">
                   <Timer className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-                  <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Time</p>
-                  <p className="text-xl font-black text-blue-700">
+                  <p className="text-[10px] sm:text-xs font-bold text-blue-400 uppercase tracking-widest">Time</p>
+                  <p className="text-lg sm:text-xl font-black text-blue-700">
                     {(recipe.prep_time_mins || 0) + (recipe.cook_time_mins || 0)}m
                   </p>
                 </div>
               )}
-              <div className="bg-slate-50 px-6 py-4 rounded-2xl border border-slate-100 shadow-sm text-center min-w-[120px]">
+              <div className="bg-slate-50 px-3 sm:px-6 py-3 sm:py-4 rounded-2xl border border-slate-100 shadow-sm text-center">
                 <HistoryIcon className="w-5 h-5 text-slate-400 mx-auto mb-1" />
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Cooks</p>
-                <p className="text-xl font-black text-slate-900">{recipe.cook_count || 0}</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">Cooks</p>
+                <p className="text-lg sm:text-xl font-black text-slate-900">{recipe.cook_count || 0}</p>
               </div>
               {recipe.last_cooked && (
-                <div className="bg-blue-50/50 px-6 py-4 rounded-2xl border border-blue-100 shadow-sm text-center min-w-[120px]">
+                <div className="bg-blue-50/50 px-3 sm:px-6 py-3 sm:py-4 rounded-2xl border border-blue-100 shadow-sm text-center">
                   <Calendar className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-                  <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Last Made</p>
-                  <p className="text-xl font-black text-blue-700">
+                  <p className="text-[10px] sm:text-xs font-bold text-blue-400 uppercase tracking-widest">Last Made</p>
+                  <p className="text-lg sm:text-xl font-black text-blue-700">
                     {new Date(recipe.last_cooked).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </p>
                 </div>
@@ -522,7 +522,7 @@ function RecipeDetails() {
         </div>
       </div>
 
-      <div className="px-8">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Sidebar: Ingredients & Resources */}
           <aside className="lg:col-span-4 sticky top-8 self-start h-fit">

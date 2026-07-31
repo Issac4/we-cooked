@@ -63,14 +63,14 @@ export default function AddRecipe() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto pb-20">
-      <header className="mb-10">
-        <Link to="/" className={cn(buttonVariants({ variant: "ghost" }), "mb-4 -ml-4 text-slate-500 hover:text-blue-600 gap-2")}>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto pb-20">
+      <header className="mb-8 sm:mb-10">
+        <Link to="/" className={cn(buttonVariants({ variant: "ghost" }), "mb-4 -ml-2 text-slate-500 hover:text-blue-600 gap-2 w-fit")}>
           <ArrowLeft className="w-4 h-4" />
           Back to Dashboard
         </Link>
-        <h1 className="text-4xl font-black tracking-tight text-slate-900">Create New Recipe</h1>
-        <p className="text-slate-500 text-lg">Add a new culinary masterpiece to your collection.</p>
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900">Create New Recipe</h1>
+        <p className="text-slate-500 text-sm sm:text-lg">Add a new culinary masterpiece to your collection.</p>
       </header>
 
       {error && (
