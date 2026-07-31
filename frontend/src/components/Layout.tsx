@@ -22,21 +22,23 @@ export function Layout() {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden'
 
-      const mediaQuery = window.matchMedia('(min-width: 768px)')
-      const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
-        if (e.matches) {
+      if (typeof window.matchMedia === 'function') {
+        const mediaQuery = window.matchMedia('(min-width: 768px)')
+        const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
+          if (e.matches) {
+            setMobileMenuOpen(false)
+          }
+        }
+
+        if (mediaQuery.matches) {
           setMobileMenuOpen(false)
         }
-      }
 
-      if (mediaQuery.matches) {
-        setMobileMenuOpen(false)
-      }
-
-      mediaQuery.addEventListener('change', handleMediaChange)
-      return () => {
-        document.body.style.overflow = ''
-        mediaQuery.removeEventListener('change', handleMediaChange)
+        mediaQuery.addEventListener('change', handleMediaChange)
+        return () => {
+          document.body.style.overflow = ''
+          mediaQuery.removeEventListener('change', handleMediaChange)
+        }
       }
     } else {
       document.body.style.overflow = ''
