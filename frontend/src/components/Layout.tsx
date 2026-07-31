@@ -17,6 +17,18 @@ export function Layout() {
     setMobileMenuOpen(false)
   }, [location.pathname, location.search])
 
+  // Prevent background body scroll when mobile menu drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [mobileMenuOpen])
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-50/50">
       {/* Desktop Fixed Sidebar (md: and up) */}
