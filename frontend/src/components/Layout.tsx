@@ -12,10 +12,10 @@ export function Layout() {
   
   const showAdminBanner = isAuthenticated && user?.is_admin && location.pathname !== '/admin';
 
-  // Automatically close mobile menu drawer on route navigation
+  // Automatically close mobile menu drawer on route or filter query navigation
   useEffect(() => {
     setMobileMenuOpen(false)
-  }, [location.pathname])
+  }, [location.pathname, location.search])
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-50/50">
