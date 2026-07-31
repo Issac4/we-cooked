@@ -29,6 +29,17 @@ export function Layout() {
     }
   }, [mobileMenuOpen])
 
+  // Close mobile menu drawer when pressing Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [mobileMenuOpen])
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-50/50">
       {/* Desktop Fixed Sidebar (md: and up) */}
