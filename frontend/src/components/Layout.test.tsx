@@ -69,4 +69,32 @@ describe('Layout Component & Mobile Navigation', () => {
       expect(screen.queryByRole('button', { name: /close drawer/i })).not.toBeInTheDocument()
     })
   })
+
+  it('closes mobile drawer when backdrop overlay is clicked', async () => {
+    renderLayout('/')
+    const toggleBtn = screen.getByRole('button', { name: /open navigation menu/i })
+    fireEvent.click(toggleBtn)
+
+    const backdrop = document.querySelector('[aria-hidden="true"]')
+    expect(backdrop).toBeInTheDocument()
+    if (backdrop) {
+      fireEvent.click(backdrop)
+    }
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /close drawer/i })).not.toBeInTheDocument()
+    })
+  })
+
+  it('closes mobile drawer when Escape key is pressed', async () => {
+    renderLayout('/')
+    const toggleBtn = screen.getByRole('button', { name: /open navigation menu/i })
+    fireEvent.click(toggleBtn)
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /close drawer/i })).not.toBeInTheDocument()
+    })
+  })
 })

@@ -49,12 +49,16 @@ MOBILE_VIEWPORTS.forEach(({ name, width, height }) => {
       expect(isOverflowing).toBe(false);
     });
 
-    test('Zero horizontal scrollbar leakage on Auth pages', async ({ page }) => {
+    test('Zero horizontal scrollbar leakage on Auth and Form pages', async ({ page }) => {
       await page.goto('/login');
       let isOverflowing = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(isOverflowing).toBe(false);
 
       await page.goto('/register');
+      isOverflowing = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+      expect(isOverflowing).toBe(false);
+
+      await page.goto('/add-recipe');
       isOverflowing = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(isOverflowing).toBe(false);
     });
