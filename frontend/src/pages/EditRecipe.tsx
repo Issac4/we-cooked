@@ -137,14 +137,14 @@ export default function EditRecipe() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto pb-20">
-      <header className="mb-10">
-        <Link to={`/recipe/${id}`} className={cn(buttonVariants({ variant: "ghost" }), "mb-4 -ml-4 text-slate-500 hover:text-blue-600 gap-2")}>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto pb-20">
+      <header className="mb-8 sm:mb-10">
+        <Link to={`/recipe/${id}`} className={cn(buttonVariants({ variant: "ghost" }), "mb-4 -ml-2 text-slate-500 hover:text-blue-600 gap-2 w-fit")}>
           <ArrowLeft className="w-4 h-4" />
           Back to Recipe
         </Link>
-        <h1 className="text-4xl font-black tracking-tight text-slate-900">Edit Recipe</h1>
-        <p className="text-slate-500 text-lg">Update your recipe details and keep them fresh.</p>
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900">Edit Recipe</h1>
+        <p className="text-slate-500 text-sm sm:text-lg">Update your recipe details and keep them fresh.</p>
       </header>
 
       <RecipeForm 

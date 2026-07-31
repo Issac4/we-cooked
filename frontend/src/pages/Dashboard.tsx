@@ -91,14 +91,14 @@ function Dashboard() {
   const isFiltered = activeProteins.length > 0 || activeMealTypes.length > 0 || !!debouncedSearch
 
   return (
-    <div className="p-8">
-      <header className="mb-12 space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <header className="mb-8 sm:mb-12 space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
               {isFiltered ? 'Filtered Results' : 'My Recipes'}
             </h1>
-            <p className="text-slate-500 text-lg">
+            <p className="text-slate-500 text-sm sm:text-lg">
               {isFiltered 
                 ? `Showing recipes matching your criteria (${recipes.length} found)` 
                 : 'Manage your culinary collection'}
@@ -117,72 +117,82 @@ function Dashboard() {
         </div>
 
         {/* Sorting Controls */}
-        <div className="flex flex-wrap items-center gap-4 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm w-fit">
-          <div className="flex items-center gap-1 px-2 py-1 bg-slate-50 rounded-xl">
-            <ArrowUpDown className="w-4 h-4 text-slate-400" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Sort by</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => updateSort('created_at')}
-              className={cn(
-                "rounded-xl h-9 px-4 gap-2 text-sm font-bold transition-all",
-                sortBy === 'created_at' ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white" : "text-slate-500 hover:bg-slate-100"
-              )}
-            >
-              <Calendar className="w-4 h-4" />
-              Date
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => updateSort('title')}
-              className={cn(
-                "rounded-xl h-9 px-4 gap-2 text-sm font-bold transition-all",
-                sortBy === 'title' ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white" : "text-slate-500 hover:bg-slate-100"
-              )}
-            >
-              <Type className="w-4 h-4" />
-              Title
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => updateSort('total_time')}
-              className={cn(
-                "rounded-xl h-9 px-4 gap-2 text-sm font-bold transition-all",
-                sortBy === 'total_time' ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white" : "text-slate-500 hover:bg-slate-100"
-              )}
-            >
-              <Clock className="w-4 h-4" />
-              Time
-            </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white p-3 sm:p-2 rounded-2xl border border-slate-100 shadow-sm w-full sm:w-fit">
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            <div className="flex items-center gap-1 px-2 py-1 bg-slate-50 rounded-xl">
+              <ArrowUpDown className="w-4 h-4 text-slate-400" />
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Sort by</span>
+            </div>
+            
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => updateSort('created_at')}
+                className={cn(
+                  "rounded-xl h-9 px-2.5 sm:px-4 gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold transition-all",
+                  sortBy === 'created_at' ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white" : "text-slate-500 hover:bg-slate-100"
+                )}
+              >
+                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Date
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => updateSort('title')}
+                className={cn(
+                  "rounded-xl h-9 px-2.5 sm:px-4 gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold transition-all",
+                  sortBy === 'title' ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white" : "text-slate-500 hover:bg-slate-100"
+                )}
+              >
+                <Type className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Title
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => updateSort('total_time')}
+                className={cn(
+                  "rounded-xl h-9 px-2.5 sm:px-4 gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold transition-all",
+                  sortBy === 'total_time' ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white" : "text-slate-500 hover:bg-slate-100"
+                )}
+              >
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Time
+              </Button>
+            </div>
           </div>
 
-          <div className="w-px h-6 bg-slate-100 mx-1" />
+          <div className="w-px h-6 bg-slate-100 mx-1 hidden sm:block" />
 
           <Button 
             variant="outline" 
             size="sm"
             onClick={toggleOrder}
-            className="rounded-xl h-9 px-4 gap-2 text-sm font-bold border-slate-200 text-slate-600 hover:bg-slate-50 shadow-none min-w-[140px] justify-start"
+            className="rounded-xl h-9 px-4 gap-2 text-xs sm:text-sm font-bold border-slate-200 text-slate-600 hover:bg-slate-50 shadow-none w-full sm:w-auto min-w-[140px] justify-between sm:justify-start"
           >
             {order === 'asc' ? (
               <>
-                <SortAsc className="w-4 h-4 text-blue-500" />
-                {sortBy === 'created_at' && 'Oldest First'}
-                {sortBy === 'title' && 'A → Z'}
-                {sortBy === 'total_time' && 'Fastest First'}
+                <div className="flex items-center gap-2">
+                  <SortAsc className="w-4 h-4 text-blue-500" />
+                  <span>
+                    {sortBy === 'created_at' && 'Oldest First'}
+                    {sortBy === 'title' && 'A → Z'}
+                    {sortBy === 'total_time' && 'Fastest First'}
+                  </span>
+                </div>
               </>
             ) : (
               <>
-                <SortDesc className="w-4 h-4 text-blue-500" />
-                {sortBy === 'created_at' && 'Newest First'}
-                {sortBy === 'title' && 'Z → A'}
-                {sortBy === 'total_time' && 'Longest First'}
+                <div className="flex items-center gap-2">
+                  <SortDesc className="w-4 h-4 text-blue-500" />
+                  <span>
+                    {sortBy === 'created_at' && 'Newest First'}
+                    {sortBy === 'title' && 'Z → A'}
+                    {sortBy === 'total_time' && 'Longest First'}
+                  </span>
+                </div>
               </>
             )}
           </Button>

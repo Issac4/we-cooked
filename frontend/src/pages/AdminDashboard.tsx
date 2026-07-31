@@ -157,12 +157,12 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto min-h-screen">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto min-h-screen">
       {/* Registration Modal */}
       {showRegModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-md rounded-[2rem] border-none shadow-2xl animate-in zoom-in-95 duration-200">
-            <CardHeader className="p-8 pb-4">
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md rounded-[2rem] border-none shadow-2xl animate-in zoom-in-95 duration-200">
+            <CardHeader className="p-6 sm:p-8 pb-4">
               <CardTitle className="text-2xl font-black text-slate-900">Register New User</CardTitle>
               <CardDescription className="text-slate-500 font-medium mt-1">Add a new standard member to the app.</CardDescription>
             </CardHeader>

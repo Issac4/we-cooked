@@ -24,7 +24,7 @@ export const ReferenceLinkEditor = () => {
           Reference Links
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-8 space-y-4">
+      <CardContent className="p-4 sm:p-6 lg:p-8 space-y-4">
         {reference_links.map((link, idx) => (
           <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative group">
             <div className="md:col-span-3 space-y-2">

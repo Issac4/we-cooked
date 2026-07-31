@@ -120,7 +120,7 @@ function RecipeFormInner({ onSubmit, loading, submitLabel }: RecipeFormProps) {
             Basic Information
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-8 space-y-6">
+        <CardContent className="p-4 sm:p-6 lg:p-8 space-y-6">
           <ImagePicker />
           <BasicInfo />
         </CardContent>
@@ -138,11 +138,11 @@ function RecipeFormInner({ onSubmit, loading, submitLabel }: RecipeFormProps) {
       {/* Section 5: Reference Links */}
       <ReferenceLinkEditor />
 
-      <div className="flex gap-4 justify-end pt-10">
+      <div className="flex flex-col sm:flex-row gap-4 justify-end pt-6 sm:pt-10">
         <Button 
           type="submit" 
           disabled={loading}
-          className="bg-slate-900 hover:bg-blue-600 text-white rounded-xl px-12 h-12 text-lg font-bold shadow-lg shadow-slate-200 transition-all gap-2"
+          className="w-full sm:w-auto bg-slate-900 hover:bg-blue-600 text-white rounded-xl px-8 sm:px-12 h-12 text-base sm:text-lg font-bold shadow-lg shadow-slate-200 transition-all gap-2"
         >
           {loading ? (
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>

@@ -237,22 +237,22 @@ export default function Settings() {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto min-h-screen" onClick={handleBackgroundClick}>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto min-h-screen" onClick={handleBackgroundClick}>
       {/* Custom Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-md rounded-[2rem] border-none shadow-2xl animate-in zoom-in-95 duration-200">
-            <CardHeader className="p-8 pb-4 flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6">
-                <AlertTriangle className="w-8 h-8 text-red-500" />
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md rounded-[2rem] border-none shadow-2xl animate-in zoom-in-95 duration-200">
+            <CardHeader className="p-6 sm:p-8 pb-4 flex flex-col items-center text-center">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4 sm:mb-6">
+                <AlertTriangle className="w-7 h-7 sm:w-8 sm:h-8 text-red-500" />
               </div>
-              <CardTitle className="text-2xl font-black text-slate-900">Confirm Deletion</CardTitle>
-              <CardDescription className="text-slate-500 font-bold mt-2">
+              <CardTitle className="text-xl sm:text-2xl font-black text-slate-900">Confirm Deletion</CardTitle>
+              <CardDescription className="text-slate-500 font-bold mt-2 text-xs sm:text-sm">
                 Are you sure you want to delete <span className="text-slate-900">"{deleteConfirm.name}"</span>? 
                 This action cannot be undone.
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-8 pt-6 flex flex-col gap-3">
+            <CardContent className="p-6 sm:p-8 pt-4 sm:pt-6 flex flex-col gap-3">
               <Button 
                 variant="destructive" 
                 className="w-full h-12 rounded-xl font-black uppercase tracking-wider shadow-lg shadow-red-100"

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { NavLink, useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { CookingPot, LayoutDashboard, PlusCircle, LogOut, Settings, FilterX, LogIn } from 'lucide-react'
+import { CookingPot, LayoutDashboard, PlusCircle, LogOut, Settings, FilterX, LogIn, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -12,13 +12,20 @@ interface FilterItem {
   name: string
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  isMobile?: boolean
+  onClose?: () => void
+  className?: string
+}
+
+export function Sidebar({ isMobile = false, onClose, className }: SidebarProps = {}) {
   const { logout, user, isAuthenticated } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const location = useLocation()
 
   const handleLogout = () => {
+    onClose?.()
     logout()
     navigate('/login')
   }
@@ -130,20 +137,44 @@ export function Sidebar() {
   const hasActiveFilters = activeProteins.length > 0 || activeMealTypes.length > 0
 
   return (
-    <div className="w-64 border-r bg-slate-50/50 flex flex-col h-screen sticky top-0">
+    <div 
+      className={cn(
+        "bg-slate-50/50 flex flex-col h-full",
+        isMobile ? "w-full" : "w-64 border-r sticky top-0 h-screen shrink-0",
+        className
+      )}
+    >
       {/* Header */}
       <div className="p-6 pb-2">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-200">
-            <CookingPot className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-xl font-bold tracking-tight text-slate-900">RecipeApp</span>
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <Link 
+            to="/" 
+            onClick={onClose}
+            className="flex items-center gap-3"
+          >
+            <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-200">
+              <CookingPot className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xl font-bold tracking-tight text-slate-900">RecipeApp</span>
+          </Link>
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-700 h-8 w-8 rounded-full"
+              aria-label="Close drawer"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          )}
         </div>
         <nav className="space-y-1">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={onClose}
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
@@ -232,6 +263,7 @@ export function Sidebar() {
         ) : (
           <Link 
             to="/login"
+            onClick={onClose}
             className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start gap-3 text-slate-600 hover:text-blue-600 hover:bg-blue-50 px-3")}
           >
             <LogIn className="w-4 h-4" />
