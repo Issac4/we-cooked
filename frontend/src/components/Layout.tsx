@@ -17,14 +17,28 @@ export function Layout() {
     setMobileMenuOpen(false)
   }, [location.pathname, location.search])
 
-  // Prevent background body scroll when mobile menu drawer is open
+  // Prevent background body scroll and auto-close drawer on desktop resize
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden'
+
+      const mediaQuery = window.matchMedia('(min-width: 768px)')
+      const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
+        if (e.matches) {
+          setMobileMenuOpen(false)
+        }
+      }
+
+      if (mediaQuery.matches) {
+        setMobileMenuOpen(false)
+      }
+
+      mediaQuery.addEventListener('change', handleMediaChange)
+      return () => {
+        document.body.style.overflow = ''
+        mediaQuery.removeEventListener('change', handleMediaChange)
+      }
     } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
       document.body.style.overflow = ''
     }
   }, [mobileMenuOpen])
