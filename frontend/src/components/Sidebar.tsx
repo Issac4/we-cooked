@@ -139,7 +139,7 @@ export function Sidebar({ isMobile = false, onClose, className }: SidebarProps =
   return (
     <div 
       className={cn(
-        "bg-slate-50/50 flex flex-col h-full overflow-y-auto",
+        "bg-slate-50/50 flex flex-col h-full",
         isMobile ? "w-full" : "w-64 border-r sticky top-0 h-screen shrink-0",
         className
       )}
