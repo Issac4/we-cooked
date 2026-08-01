@@ -19,7 +19,7 @@ export const IngredientEditor = () => {
       <CardContent className="p-4 sm:p-6 lg:p-8">
         <div className="space-y-4">
           {ingredients.map((ing, idx) => (
-            <div key={ing.id ? `ing-${ing.id}` : `ing-row-${idx}`} className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-start">
+            <div key={`ing-row-${idx}`} className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-start">
               <div className="flex-1">
                 <Input 
                   placeholder="Item (e.g. Flour)" 
