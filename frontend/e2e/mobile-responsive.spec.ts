@@ -62,5 +62,17 @@ MOBILE_VIEWPORTS.forEach(({ name, width, height }) => {
       isOverflowing = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(isOverflowing).toBe(false);
     });
+
+    test('Recipe details sidebar does not stick on mobile viewports', async ({ page }) => {
+      await page.goto('/recipe/1');
+      await page.waitForLoadState('networkidle');
+
+      const asidePosition = await page.evaluate(() => {
+        const aside = document.querySelector('aside');
+        return aside ? window.getComputedStyle(aside).position : '';
+      });
+
+      expect(asidePosition).not.toBe('sticky');
+    });
   });
 });
