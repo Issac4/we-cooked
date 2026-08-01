@@ -72,17 +72,38 @@ MOBILE_VIEWPORTS.forEach(({ name, width, height }) => {
     });
 
     test('Recipe details sidebar does not stick on mobile viewports', async ({ page }) => {
-      // 1. Log in as admin to create test recipe
+      const randomId = Math.floor(Math.random() * 100000);
+      const testUser = `mobile_user_${randomId}`;
+      const testEmail = `mobile_${randomId}@example.com`;
+      const testPass = 'Password123!';
+
+      // 1. Log in as admin to register a regular user
       await page.goto('/login');
       await page.getByLabel('Email or Username').fill('admin');
       await page.getByLabel('Password').fill('admin123');
       await page.getByRole('button', { name: 'Sign In' }).click();
-      await expect(page).toHaveURL('http://localhost:5173/');
+      await expect(page).toHaveURL('http://localhost:5173/', { timeout: 15000 });
 
-      // 2. Navigate to /add-recipe and create a recipe with title, ingredient, and step
+      // 2. Register regular user
+      await page.goto('/register');
+      await page.getByLabel('Username').fill(testUser);
+      await page.getByLabel('Email').fill(testEmail);
+      await page.getByLabel('Password').fill(testPass);
+      await page.getByRole('button', { name: 'Register User' }).click();
+      await expect(page).toHaveURL('http://localhost:5173/admin', { timeout: 15000 });
+
+      // 3. Log out admin and log in as regular user
+      await page.goto('/login');
+      await page.getByLabel('Email or Username').fill(testUser);
+      await page.getByLabel('Password').fill(testPass);
+      await page.getByRole('button', { name: 'Sign In' }).click();
+      await expect(page).toHaveURL('http://localhost:5173/', { timeout: 15000 });
+
+      // 4. Navigate to /add-recipe as regular user
       await page.goto('/add-recipe');
+      await expect(page.getByLabel(/Recipe Title/i)).toBeVisible({ timeout: 15000 });
       await page.getByLabel(/Recipe Title/i).fill('Mobile Test Recipe');
-      
+
       const ingredientInput = page.getByPlaceholder(/e\.g\. Chicken Breast/i).first();
       if (await ingredientInput.isVisible()) {
         await ingredientInput.fill('Chicken Breast');
@@ -95,10 +116,10 @@ MOBILE_VIEWPORTS.forEach(({ name, width, height }) => {
 
       await page.getByRole('button', { name: /Save Recipe/i }).click();
 
-      // 3. Verify redirection to Recipe Details page
+      // 5. Verify redirection to Recipe Details page
       await expect(page).toHaveURL(/\/recipe\/\d+/, { timeout: 15000 });
 
-      // 4. Assert sidebar is visible and position is not sticky on mobile
+      // 6. Assert sidebar is visible and position is not sticky on mobile
       const aside = page.locator('aside').first();
       await expect(aside).toBeVisible();
 
