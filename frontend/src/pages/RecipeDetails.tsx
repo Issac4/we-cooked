@@ -525,7 +525,7 @@ function RecipeDetails() {
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Sidebar: Ingredients & Resources */}
-          <aside className="lg:col-span-4 sticky top-8 self-start h-fit">
+          <aside className="lg:col-span-4 lg:sticky lg:top-8 self-start h-fit">
             <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden p-0">
               <CardHeader className="bg-slate-900 text-white pb-6 pt-8">
                 <CardTitle className="text-2xl font-bold flex items-center gap-3">
