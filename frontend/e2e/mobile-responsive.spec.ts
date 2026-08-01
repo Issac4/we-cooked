@@ -72,14 +72,33 @@ MOBILE_VIEWPORTS.forEach(({ name, width, height }) => {
     });
 
     test('Recipe details sidebar does not stick on mobile viewports', async ({ page }) => {
-      await page.goto('/');
-      await page.waitForLoadState('networkidle');
+      // 1. Log in as admin to create test recipe
+      await page.goto('/login');
+      await page.getByLabel('Email or Username').fill('admin');
+      await page.getByLabel('Password').fill('admin123');
+      await page.getByRole('button', { name: 'Sign In' }).click();
+      await expect(page).toHaveURL('http://localhost:5173/');
 
-      const recipeCard = page.locator('a[href^="/recipe/"]').first();
-      await expect(recipeCard).toBeVisible();
-      await recipeCard.click();
-      await page.waitForLoadState('networkidle');
+      // 2. Navigate to /add-recipe and create a recipe with title, ingredient, and step
+      await page.goto('/add-recipe');
+      await page.getByLabel(/Recipe Title/i).fill('Mobile Test Recipe');
+      
+      const ingredientInput = page.getByPlaceholder(/e\.g\. Chicken Breast/i).first();
+      if (await ingredientInput.isVisible()) {
+        await ingredientInput.fill('Chicken Breast');
+      }
 
+      const prepStepInput = page.getByPlaceholder(/e\.g\. Chop onions/i).first();
+      if (await prepStepInput.isVisible()) {
+        await prepStepInput.fill('Dice Chicken');
+      }
+
+      await page.getByRole('button', { name: /Save Recipe/i }).click();
+
+      // 3. Verify redirection to Recipe Details page
+      await expect(page).toHaveURL(/\/recipe\/\d+/, { timeout: 15000 });
+
+      // 4. Assert sidebar is visible and position is not sticky on mobile
       const aside = page.locator('aside').first();
       await expect(aside).toBeVisible();
 
