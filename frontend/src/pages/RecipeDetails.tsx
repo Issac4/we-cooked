@@ -322,6 +322,7 @@ function RecipeDetails() {
                       <button
                         key={star}
                         type="button"
+                        aria-label={`Rate ${star} out of 5 stars`}
                         onClick={() => setNewLog({...newLog, rating: star})}
                         className={cn(
                           "w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all",
