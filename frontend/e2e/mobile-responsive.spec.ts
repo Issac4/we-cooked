@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const MOBILE_VIEWPORTS = [
   { name: 'iPhone SE (375x667)', width: 375, height: 667 },
   { name: 'Pixel 5 (393x851)', width: 393, height: 851 },
-  { name: 'iPad Mini (768x1024)', width: 768, height: 1024 },
+  { name: 'Large Mobile (414x896)', width: 414, height: 896 },
 ];
 
 MOBILE_VIEWPORTS.forEach(({ name, width, height }) => {
