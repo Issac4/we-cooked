@@ -219,7 +219,7 @@ function RecipeDetails() {
       {/* Deletion Confirmation Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border-slate-200 rounded-3xl animate-in zoom-in-95 duration-200 p-0">
             <CardHeader className="bg-red-50 border-b border-red-100 flex flex-row items-center justify-between py-4 px-6">
               <CardTitle className="text-red-700 flex items-center gap-2 text-lg font-bold">
                 <AlertTriangle className="w-5 h-5" />
@@ -275,7 +275,7 @@ function RecipeDetails() {
       {/* Log Meal Modal */}
       {showLogModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border-slate-200 rounded-3xl animate-in zoom-in-95 duration-200 p-0">
             <CardHeader className="bg-blue-600 text-white flex flex-row items-center justify-between py-4 px-6">
               <CardTitle className="flex items-center gap-2 text-lg font-bold">
                 <HistoryIcon className="w-5 h-5" />
@@ -373,7 +373,7 @@ function RecipeDetails() {
       {/* Log Entry Deletion Confirmation Modal */}
       {showLogDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border-slate-200 rounded-3xl animate-in zoom-in-95 duration-200 p-0">
             <CardHeader className="bg-red-50 border-b border-red-100 flex flex-row items-center justify-between py-4 px-6">
               <CardTitle className="text-red-700 flex items-center gap-2 text-lg font-bold">
                 <AlertTriangle className="w-5 h-5" />
