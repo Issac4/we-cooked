@@ -76,16 +76,15 @@ MOBILE_VIEWPORTS.forEach(({ name, width, height }) => {
       await page.waitForLoadState('networkidle');
 
       const recipeCard = page.locator('a[href^="/recipe/"]').first();
-      if (await recipeCard.isVisible()) {
-        await recipeCard.click();
-        await page.waitForLoadState('networkidle');
+      await expect(recipeCard).toBeVisible();
+      await recipeCard.click();
+      await page.waitForLoadState('networkidle');
 
-        const aside = page.locator('aside').first();
-        await expect(aside).toBeVisible();
+      const aside = page.locator('aside').first();
+      await expect(aside).toBeVisible();
 
-        const asidePosition = await aside.evaluate((el) => window.getComputedStyle(el).position);
-        expect(asidePosition).not.toBe('sticky');
-      }
+      const asidePosition = await aside.evaluate((el) => window.getComputedStyle(el).position);
+      expect(asidePosition).not.toBe('sticky');
     });
   });
 });
