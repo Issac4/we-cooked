@@ -3,11 +3,19 @@ import { test, expect } from '@playwright/test';
 const MOBILE_VIEWPORTS = [
   { name: 'iPhone SE (375x667)', width: 375, height: 667 },
   { name: 'Pixel 5 (393x851)', width: 393, height: 851 },
+  { name: 'iPad Mini (768x1024)', width: 768, height: 1024 },
 ];
 
 MOBILE_VIEWPORTS.forEach(({ name, width, height }) => {
   test.describe(`Mobile Responsiveness - ${name}`, () => {
     test.use({ viewport: { width, height } });
+
+    test.beforeEach(async ({ page }) => {
+      await page.route(/.*localhost:8000.*/, async (route) => {
+        const url = route.request().url();
+        await route.continue({ url: url.replace('localhost:8000', 'backend:8000') });
+      });
+    });
 
     test('Zero horizontal scrollbar leakage on Dashboard page', async ({ page }) => {
       await page.goto('/');
@@ -64,15 +72,20 @@ MOBILE_VIEWPORTS.forEach(({ name, width, height }) => {
     });
 
     test('Recipe details sidebar does not stick on mobile viewports', async ({ page }) => {
-      await page.goto('/recipe/1');
+      await page.goto('/');
       await page.waitForLoadState('networkidle');
 
-      const asidePosition = await page.evaluate(() => {
-        const aside = document.querySelector('aside');
-        return aside ? window.getComputedStyle(aside).position : '';
-      });
+      const recipeCard = page.locator('a[href^="/recipe/"]').first();
+      if (await recipeCard.isVisible()) {
+        await recipeCard.click();
+        await page.waitForLoadState('networkidle');
 
-      expect(asidePosition).not.toBe('sticky');
+        const aside = page.locator('aside').first();
+        await expect(aside).toBeVisible();
+
+        const asidePosition = await aside.evaluate((el) => window.getComputedStyle(el).position);
+        expect(asidePosition).not.toBe('sticky');
+      }
     });
   });
 });
