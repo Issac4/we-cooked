@@ -46,6 +46,9 @@ jobs:
       - name: Run Frontend Tests
         run: docker compose exec -T frontend npm run test
 
+      - name: Verify Frontend Production Build
+        run: docker compose exec -T frontend npm run build
+
       - name: Run E2E Integration Tests
         run: ./run-e2e.sh
 
