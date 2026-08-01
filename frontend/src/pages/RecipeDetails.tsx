@@ -219,7 +219,7 @@ function RecipeDetails() {
       {/* Deletion Confirmation Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border-slate-200 rounded-3xl animate-in zoom-in-95 duration-200 p-0">
             <CardHeader className="bg-red-50 border-b border-red-100 flex flex-row items-center justify-between py-4 px-6">
               <CardTitle className="text-red-700 flex items-center gap-2 text-lg font-bold">
                 <AlertTriangle className="w-5 h-5" />
@@ -275,7 +275,7 @@ function RecipeDetails() {
       {/* Log Meal Modal */}
       {showLogModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border-slate-200 rounded-3xl animate-in zoom-in-95 duration-200 p-0">
             <CardHeader className="bg-blue-600 text-white flex flex-row items-center justify-between py-4 px-6">
               <CardTitle className="flex items-center gap-2 text-lg font-bold">
                 <HistoryIcon className="w-5 h-5" />
@@ -322,6 +322,7 @@ function RecipeDetails() {
                       <button
                         key={star}
                         type="button"
+                        aria-label={`Rate ${star} out of 5 stars`}
                         onClick={() => setNewLog({...newLog, rating: star})}
                         className={cn(
                           "w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all",
@@ -372,7 +373,7 @@ function RecipeDetails() {
       {/* Log Entry Deletion Confirmation Modal */}
       {showLogDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md shadow-2xl border-slate-200 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200 p-0">
+          <Card className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border-slate-200 rounded-3xl animate-in zoom-in-95 duration-200 p-0">
             <CardHeader className="bg-red-50 border-b border-red-100 flex flex-row items-center justify-between py-4 px-6">
               <CardTitle className="text-red-700 flex items-center gap-2 text-lg font-bold">
                 <AlertTriangle className="w-5 h-5" />
@@ -525,7 +526,7 @@ function RecipeDetails() {
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Sidebar: Ingredients & Resources */}
-          <aside className="lg:col-span-4 sticky top-8 self-start h-fit">
+          <aside className="lg:col-span-4 lg:sticky lg:top-8 self-start h-fit">
             <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden p-0">
               <CardHeader className="bg-slate-900 text-white pb-6 pt-8">
                 <CardTitle className="text-2xl font-bold flex items-center gap-3">
