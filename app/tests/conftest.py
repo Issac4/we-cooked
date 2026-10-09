@@ -4,13 +4,13 @@ from httpx import ASGITransport, AsyncClient
 from main import app
 from seed import seed_data
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def setup_seed_data():
     """Ensure essential seed data (categories, default admin) exists for all test fixtures."""
     seed_data()
 
 @pytest.fixture
-async def client():
+async def client(setup_seed_data):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
