@@ -1,11 +1,12 @@
 from sqlmodel import SQLModel, Field, Relationship, Column, UniqueConstraint
+from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timezone
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 
@@ -66,7 +67,9 @@ class Recipe(SQLModel, table=True):
     reference_links: List[Dict[str, Any]] = Field(default=[], sa_column=Column(JSONB))
     attributes: Dict[str, Any] = Field(default={}, sa_column=Column(JSONB))
     
-    created_at: datetime = Field(default_factory=utc_now)
+    created_at: datetime = Field(
+        default_factory=utc_now, sa_type=DateTime(timezone=False)
+    )
 
     # Relationships
     proteins: List[Protein] = Relationship(
@@ -87,7 +90,9 @@ class MealLog(SQLModel, table=True):
     cooked_date: date = Field(default_factory=date.today)
     rating: int = Field(ge=1, le=5)
     notes: Optional[str] = None
-    created_at: datetime = Field(default_factory=utc_now)
+    created_at: datetime = Field(
+        default_factory=utc_now, sa_type=DateTime(timezone=False)
+    )
 
     recipe: Recipe = Relationship(back_populates="logs")
 
@@ -101,5 +106,7 @@ class User(SQLModel, table=True):
     hashed_password: str = Field(max_length=255)
     is_active: bool = Field(default=True)
     is_admin: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=utc_now)
+    created_at: datetime = Field(
+        default_factory=utc_now, sa_type=DateTime(timezone=False)
+    )
 
