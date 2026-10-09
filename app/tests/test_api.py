@@ -342,3 +342,52 @@ async def test_recipe_search(client: AsyncClient, auth_headers: dict):
     assert "Match 2" in titles
     assert "Fail Protein" not in titles
     assert "Fail MealType" not in titles
+
+
+@pytest.mark.asyncio
+async def test_created_at_naive_storage_independent_of_session_timezone(client: AsyncClient):
+    """Verify created_at fields preserve identical naive UTC timestamp without timezone offset."""
+    from sqlmodel import Session
+    from sqlalchemy import text
+    from database import engine
+    from models import Recipe, MealLog, User
+
+    with Session(engine) as session:
+        # Simulate non-UTC database session timezone
+        session.execute(text("SET timezone TO 'America/Toronto';"))
+
+        recipe = Recipe(title="TZ Naive Verification Recipe")
+        session.add(recipe)
+        session.flush()
+
+        # Check raw database value matches Python model created_at without shifting
+        raw_row = session.execute(
+            text(f"SELECT created_at FROM recipes WHERE id = {recipe.id};")
+        ).fetchone()
+
+        assert recipe.created_at.tzinfo is None
+        assert raw_row[0] == recipe.created_at
+
+        # Verify MealLog and User models
+        meal_log = MealLog(recipe_id=recipe.id, rating=5)
+        session.add(meal_log)
+        session.flush()
+
+        ml_row = session.execute(
+            text(f"SELECT created_at FROM meal_logs WHERE id = {meal_log.id};")
+        ).fetchone()
+        assert meal_log.created_at.tzinfo is None
+        assert ml_row[0] == meal_log.created_at
+
+        user = User(username="tz_naive_user", email="tz_naive@example.com", hashed_password="pw")
+        session.add(user)
+        session.flush()
+
+        u_row = session.execute(
+            text(f"SELECT created_at FROM users WHERE id = {user.id};")
+        ).fetchone()
+        assert user.created_at.tzinfo is None
+        assert u_row[0] == user.created_at
+
+        session.rollback()
+
