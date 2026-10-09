@@ -53,6 +53,9 @@ jobs:
       - name: Run E2E Integration Tests
         run: ./run-e2e.sh
 
+      - name: Test Release Tag Validation Logic
+        run: ./tests/test_release_tag_validation.sh
+
       - name: Output container logs on failure
         if: failure()
         run: docker compose logs
@@ -73,6 +76,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Validate Strict SemVer Release Tag
+        run: ./scripts/validate-release-tag.sh "${{ github.ref_name }}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
