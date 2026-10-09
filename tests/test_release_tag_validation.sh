@@ -51,4 +51,26 @@ for tag in "${INVALID_TAGS[@]}"; do
   echo "PASS (rejected): '${tag}'"
 done
 
-echo "=== All Release Tag Validation Tests Passed (19/19) ==="
+echo "--- Testing Shell Injection Protection via Environment Variable Transport ---"
+# Verify that passing a tag containing command substitution through an environment variable
+# does not execute commands and is rejected safely.
+TEST_MARKER_FILE="/tmp/antigravity_injection_marker_${$}"
+rm -f "${TEST_MARKER_FILE}"
+
+INJECTION_PAYLOAD="v\$(touch ${TEST_MARKER_FILE}).0.0"
+OUTPUT=$(RELEASE_TAG="${INJECTION_PAYLOAD}" "${VALIDATE_SCRIPT}" "${INJECTION_PAYLOAD}" 2>&1 || true)
+
+if [[ -f "${TEST_MARKER_FILE}" ]]; then
+  rm -f "${TEST_MARKER_FILE}"
+  echo "FAILED: Command substitution was executed during tag transport!" >&2
+  exit 1
+fi
+rm -f "${TEST_MARKER_FILE}"
+
+if ! echo "${OUTPUT}" | grep -q "ERROR:"; then
+  echo "FAILED: Malicious tag was not rejected!" >&2
+  exit 1
+fi
+echo "PASS: Tag containing command substitution safely rejected without execution."
+
+echo "=== All Release Tag Validation Tests Passed (20/20) ==="
