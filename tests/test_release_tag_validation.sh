@@ -51,26 +51,67 @@ for tag in "${INVALID_TAGS[@]}"; do
   echo "PASS (rejected): '${tag}'"
 done
 
-echo "--- Testing Shell Injection Protection via Environment Variable Transport ---"
-# Verify that passing a tag containing command substitution through an environment variable
-# does not execute commands and is rejected safely.
-TEST_MARKER_FILE="/tmp/antigravity_injection_marker_${$}"
-rm -f "${TEST_MARKER_FILE}"
+echo "--- Testing Workflow Step Execution & Injection Protection ---"
+# Parse and execute the actual step defined in .github/workflows/ci.yml
+# to verify that it uses environment variable transport and prevents command substitution.
+python3 -c '
+import yaml, subprocess, os, sys
 
-INJECTION_PAYLOAD="v\$(touch ${TEST_MARKER_FILE}).0.0"
-OUTPUT=$(RELEASE_TAG="${INJECTION_PAYLOAD}" "${VALIDATE_SCRIPT}" "${INJECTION_PAYLOAD}" 2>&1 || true)
+CI_WORKFLOW = "'"${REPO_ROOT}"'/.github/workflows/ci.yml"
+with open(CI_WORKFLOW) as f:
+    wf = yaml.safe_load(f)
 
-if [[ -f "${TEST_MARKER_FILE}" ]]; then
-  rm -f "${TEST_MARKER_FILE}"
-  echo "FAILED: Command substitution was executed during tag transport!" >&2
-  exit 1
-fi
-rm -f "${TEST_MARKER_FILE}"
+step = None
+for s in wf["jobs"]["build-and-publish"]["steps"]:
+    if s.get("name") == "Validate Strict SemVer Release Tag":
+        step = s
+        break
 
-if ! echo "${OUTPUT}" | grep -q "ERROR:"; then
-  echo "FAILED: Malicious tag was not rejected!" >&2
-  exit 1
-fi
-echo "PASS: Tag containing command substitution safely rejected without execution."
+if not step:
+    print("ERROR: Step Validate Strict SemVer Release Tag not found in ci.yml!", file=sys.stderr)
+    sys.exit(1)
+
+run_cmd = step.get("run", "")
+env_bindings = step.get("env", {})
+
+# 1. Structural security assertion: reject inline GitHub expression interpolation
+if "${{ github.ref_name }}" in run_cmd or "${{ github.ref }}" in run_cmd:
+    print("ERROR: Inlined GitHub expression detected in run command!", file=sys.stderr)
+    sys.exit(1)
+
+if env_bindings.get("RELEASE_TAG") != "${{ github.ref_name }}":
+    print("ERROR: RELEASE_TAG not bound to ${{ github.ref_name }} in step env!", file=sys.stderr)
+    sys.exit(1)
+
+# 2. Execution emulation with malicious payload
+marker_file = "/tmp/antigravity_step_marker_" + str(os.getpid())
+if os.path.exists(marker_file):
+    os.remove(marker_file)
+
+payload = "v$(touch " + marker_file + ").0.0"
+
+# Emulate GitHub Actions runner: sets env and substitutes expressions in run_cmd
+env = dict(os.environ)
+for k, v in env_bindings.items():
+    if v == "${{ github.ref_name }}":
+        env[k] = payload
+    else:
+        env[k] = v
+
+resolved_cmd = run_cmd.replace("${{ github.ref_name }}", payload)
+
+res = subprocess.run(resolved_cmd, shell=True, env=env, cwd="'"${REPO_ROOT}"'", capture_output=True, text=True)
+
+if os.path.exists(marker_file):
+    os.remove(marker_file)
+    print("FAILED: Command substitution was executed by workflow step!", file=sys.stderr)
+    sys.exit(1)
+
+if res.returncode == 0 or "ERROR:" not in res.stderr:
+    print("FAILED: Malicious tag was not rejected by workflow step validator!", file=sys.stderr)
+    sys.exit(1)
+
+print("SUCCESS: Workflow step executed safely with environment variable transport.")
+'
 
 echo "=== All Release Tag Validation Tests Passed (20/20) ==="
