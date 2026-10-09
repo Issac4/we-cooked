@@ -2,6 +2,12 @@ import pytest
 import uuid
 from httpx import ASGITransport, AsyncClient
 from main import app
+from seed import seed_data
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_seed_data():
+    """Ensure essential seed data (categories, default admin) exists for all test fixtures."""
+    seed_data()
 
 @pytest.fixture
 async def client():
@@ -25,7 +31,9 @@ async def admin_auth_token(client: AsyncClient):
         "password": "admin123"
     }
     response = await client.post("/auth/token", data=login_data)
-    return response.json()["access_token"]
+    data = response.json()
+    assert response.status_code == 200, f"Admin login failed: {data}"
+    return data["access_token"]
 
 @pytest.fixture
 async def admin_auth_headers(admin_auth_token: str):
