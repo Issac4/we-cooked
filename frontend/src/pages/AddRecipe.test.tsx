@@ -273,4 +273,30 @@ describe('AddRecipe Page', () => {
       expect(payload.instructions.cook[0].timer_mins).toBe(15)
     })
   })
+
+  it('omits timer_mins when non-integer or decimal values are entered', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: true, json: async () => [] })
+    renderAddRecipe()
+
+    const titleInput = screen.getByPlaceholderText(/e.g. Classic Beef Stroganoff/i)
+    fireEvent.change(titleInput, { target: { value: 'Cook Step Recipe With Decimal' } })
+
+    const cookActionInputs = screen.getAllByPlaceholderText(/Action \(e.g. Sear the steak\)/i)
+    fireEvent.change(cookActionInputs[0], { target: { value: 'Sear the steak' } })
+
+    const timerInput = screen.getByLabelText(/Cooking step 1 timer in minutes/i)
+    fireEvent.change(timerInput, { target: { value: '1.5' } })
+
+    const saveBtn = screen.getByRole('button', { name: /Save Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      const recipeCall = (fetch as any).mock.calls.find((call: any) => 
+        call[0].includes('/recipes/') && call[1].method === 'POST'
+      )
+      expect(recipeCall).toBeDefined()
+      const payload = JSON.parse(recipeCall[1].body)
+      expect(payload.instructions.cook[0].timer_mins).toBeUndefined()
+    })
+  })
 })

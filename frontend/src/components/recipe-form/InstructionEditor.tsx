@@ -229,8 +229,8 @@ export const InstructionEditor = () => {
                                       className="w-20 h-8"
                                       value={step.timer_mins && step.timer_mins > 0 ? step.timer_mins : ''}
                                       onChange={(e) => {
-                                        const val = parseInt(e.target.value, 10)
-                                        handleUpdateStep('cook', idx, 'timer_mins', isNaN(val) || val <= 0 ? undefined : val)
+                                        const num = Number(e.target.value)
+                                        handleUpdateStep('cook', idx, 'timer_mins', !Number.isInteger(num) || num <= 0 ? undefined : num)
                                       }}
                                     />
                                   </div>
