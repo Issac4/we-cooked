@@ -58,7 +58,11 @@ function RecipeFormInner({ onSubmit, loading, submitLabel }: RecipeFormProps) {
           .map((step, idx) => ({ ...step, step: idx + 1 })),
         cook: formData.instructions.cook
           .filter(step => step.action.trim() || step.description?.trim())
-          .map((step, idx) => ({ ...step, step: idx + 1 }))
+          .map((step, idx) => ({
+            ...step,
+            step: idx + 1,
+            timer_mins: step.timer_mins && step.timer_mins > 0 ? step.timer_mins : undefined
+          }))
       },
       reference_links: formData.reference_links.filter(link => link.url.trim())
     }

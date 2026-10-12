@@ -43,7 +43,7 @@ interface RecipeFormContextType {
   handleUpdateIngredient: (index: number, field: keyof Ingredient, value: string) => void;
   handleRemoveIngredient: (index: number) => void;
   handleAddStep: (type: 'prep' | 'cook') => void;
-  handleUpdateStep: (type: 'prep' | 'cook', index: number, field: keyof InstructionStep, value: string | number) => void;
+  handleUpdateStep: (type: 'prep' | 'cook', index: number, field: keyof InstructionStep, value: string | number | undefined) => void;
   handleRemoveStep: (type: 'prep' | 'cook', index: number) => void;
   handleDragEnd: (result: DropResult) => void;
   handleAddReferenceLink: () => void;
@@ -104,7 +104,7 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
     ingredients: initialData?.ingredients || [{ item: '', amount: '' }],
     instructions: initialData?.instructions || {
       prep: [{ step: 1, action: '', description: '' }],
-      cook: [{ step: 1, action: '', description: '', timer_mins: 0 }]
+      cook: [{ step: 1, action: '', description: '' }]
     },
     reference_links: initialData?.reference_links || [],
     attributes: initialData?.attributes || {},
@@ -216,15 +216,14 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
           { 
             step: prev.instructions[type].length + 1, 
             action: '', 
-            description: '',
-            ...(type === 'cook' ? { timer_mins: 0 } : {})
+            description: ''
           }
         ]
       }
     }))
   }, [])
 
-  const handleUpdateStep = useCallback((type: 'prep' | 'cook', index: number, field: keyof InstructionStep, value: string | number) => {
+  const handleUpdateStep = useCallback((type: 'prep' | 'cook', index: number, field: keyof InstructionStep, value: string | number | undefined) => {
     setFormData(prev => {
       const newSteps = [...prev.instructions[type]]
       newSteps[index] = { ...newSteps[index], [field]: value } as InstructionStep

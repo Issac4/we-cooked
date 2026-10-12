@@ -222,9 +222,16 @@ export const InstructionEditor = () => {
                                     <Input 
                                       id={`timer-${idx}`}
                                       type="number" 
+                                      min={1}
+                                      step="1"
+                                      inputMode="numeric"
+                                      aria-label={`Cooking step ${step.step} timer in minutes`}
                                       className="w-20 h-8"
-                                      value={step.timer_mins || 0}
-                                      onChange={(e) => handleUpdateStep('cook', idx, 'timer_mins', parseInt(e.target.value) || 0)}
+                                      value={step.timer_mins && step.timer_mins > 0 ? step.timer_mins : ''}
+                                      onChange={(e) => {
+                                        const val = parseInt(e.target.value, 10)
+                                        handleUpdateStep('cook', idx, 'timer_mins', isNaN(val) || val <= 0 ? undefined : val)
+                                      }}
                                     />
                                   </div>
                                 </div>

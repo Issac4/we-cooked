@@ -196,4 +196,81 @@ describe('AddRecipe Page', () => {
     const titleInput = screen.getByPlaceholderText(/e.g. Classic Beef Stroganoff/i)
     expect(titleInput).toHaveAttribute('maxLength', '255')
   })
+
+  it('omits timer_mins when cooking step timer is not specified', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: true, json: async () => [] })
+    renderAddRecipe()
+
+    const titleInput = screen.getByPlaceholderText(/e.g. Classic Beef Stroganoff/i)
+    fireEvent.change(titleInput, { target: { value: 'Cook Step Recipe' } })
+
+    const cookActionInputs = screen.getAllByPlaceholderText(/Action \(e.g. Sear the steak\)/i)
+    fireEvent.change(cookActionInputs[0], { target: { value: 'Sear the steak' } })
+
+    const saveBtn = screen.getByRole('button', { name: /Save Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      const recipeCall = (fetch as any).mock.calls.find((call: any) => 
+        call[0].includes('/recipes/') && call[1].method === 'POST'
+      )
+      expect(recipeCall).toBeDefined()
+      const payload = JSON.parse(recipeCall[1].body)
+      expect(payload.instructions.cook).toHaveLength(1)
+      expect(payload.instructions.cook[0].action).toBe('Sear the steak')
+      expect(payload.instructions.cook[0].timer_mins).toBeUndefined()
+    })
+  })
+
+  it('omits timer_mins when user explicitly enters 0 into timer input', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: true, json: async () => [] })
+    renderAddRecipe()
+
+    const titleInput = screen.getByPlaceholderText(/e.g. Classic Beef Stroganoff/i)
+    fireEvent.change(titleInput, { target: { value: 'Cook Step Recipe With Zero' } })
+
+    const cookActionInputs = screen.getAllByPlaceholderText(/Action \(e.g. Sear the steak\)/i)
+    fireEvent.change(cookActionInputs[0], { target: { value: 'Sear the steak' } })
+
+    const timerInput = screen.getByLabelText(/Cooking step 1 timer in minutes/i)
+    fireEvent.change(timerInput, { target: { value: '0' } })
+
+    const saveBtn = screen.getByRole('button', { name: /Save Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      const recipeCall = (fetch as any).mock.calls.find((call: any) => 
+        call[0].includes('/recipes/') && call[1].method === 'POST'
+      )
+      expect(recipeCall).toBeDefined()
+      const payload = JSON.parse(recipeCall[1].body)
+      expect(payload.instructions.cook[0].timer_mins).toBeUndefined()
+    })
+  })
+
+  it('includes timer_mins when user enters a positive number into timer input', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: true, json: async () => [] })
+    renderAddRecipe()
+
+    const titleInput = screen.getByPlaceholderText(/e.g. Classic Beef Stroganoff/i)
+    fireEvent.change(titleInput, { target: { value: 'Cook Step Recipe With Timer' } })
+
+    const cookActionInputs = screen.getAllByPlaceholderText(/Action \(e.g. Sear the steak\)/i)
+    fireEvent.change(cookActionInputs[0], { target: { value: 'Sear the steak' } })
+
+    const timerInput = screen.getByLabelText(/Cooking step 1 timer in minutes/i)
+    fireEvent.change(timerInput, { target: { value: '15' } })
+
+    const saveBtn = screen.getByRole('button', { name: /Save Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      const recipeCall = (fetch as any).mock.calls.find((call: any) => 
+        call[0].includes('/recipes/') && call[1].method === 'POST'
+      )
+      expect(recipeCall).toBeDefined()
+      const payload = JSON.parse(recipeCall[1].body)
+      expect(payload.instructions.cook[0].timer_mins).toBe(15)
+    })
+  })
 })
