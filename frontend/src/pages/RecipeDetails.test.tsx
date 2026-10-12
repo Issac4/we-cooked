@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import RecipeDetails from './RecipeDetails'
@@ -99,5 +99,56 @@ describe('RecipeDetails Deletion', () => {
     
     await waitFor(() => expect(api.apiFetch).toHaveBeenCalledWith('/recipes/1', expect.objectContaining({ method: 'DELETE' })))
     await waitFor(() => expect(screen.getByText('Dashboard')).toBeDefined())
+  })
+
+  describe('Cooking Step Timers', () => {
+    it.each([
+      { label: 'is 0', timer_mins: 0 },
+      { label: 'is undefined', timer_mins: undefined },
+      { label: 'is null', timer_mins: null as any },
+    ])('does not render stray 0 or badge when timer_mins $label', async ({ timer_mins }) => {
+      ;(api.apiFetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          ...mockRecipe,
+          instructions: {
+            prep: [],
+            cook: [
+              { step: 1, action: 'Simmer sauce', description: 'Simmer gently', timer_mins }
+            ]
+          }
+        })
+      })
+
+      renderComponent(false)
+      await waitFor(() => expect(screen.getByText('Simmer sauce')).toBeDefined())
+
+      const stepHeading = screen.getByText('Simmer sauce')
+      expect(stepHeading.parentElement?.textContent?.trim()).toBe('Simmer sauce')
+      expect(screen.queryByText('0m')).toBeNull()
+
+      const cookingSection = screen.getByText('Simmer sauce').closest('section')!
+      expect(within(cookingSection).queryByText('0')).toBeNull()
+    })
+
+    it('renders timer badge when timer_mins is greater than 0', async () => {
+      ;(api.apiFetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          ...mockRecipe,
+          instructions: {
+            prep: [],
+            cook: [
+              { step: 1, action: 'Bake chicken', description: 'Bake until done', timer_mins: 15 }
+            ]
+          }
+        })
+      })
+
+      renderComponent(false)
+      await waitFor(() => expect(screen.getByText('Bake chicken')).toBeDefined())
+
+      expect(screen.getByText('15m')).toBeDefined()
+    })
   })
 })

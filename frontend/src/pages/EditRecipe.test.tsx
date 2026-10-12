@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import EditRecipe from './EditRecipe'
 import { AuthProvider } from '../context/AuthContext'
@@ -93,6 +93,89 @@ describe('EditRecipe Page', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Recipe not found/i)).toBeInTheDocument()
+    })
+  })
+
+  it('omits timer_mins when submitting an existing recipe that has timer_mins: 0 without editing', async () => {
+    const legacyRecipe = {
+      ...mockRecipe,
+      instructions: {
+        prep: [{ step: 1, action: 'Wash chicken', description: '' }],
+        cook: [{ step: 1, action: 'Fry chicken', description: '', timer_mins: 0 }]
+      }
+    }
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => legacyRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.resolve({ ok: true, json: async () => ({ ...legacyRecipe, id: 1 }) } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
+    })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      const putCall = vi.mocked(fetch).mock.calls.find((call) => 
+        call[0].toString().includes('/recipes/1') && call[1]?.method === 'PUT'
+      )
+      expect(putCall).toBeDefined()
+      const payload = JSON.parse(putCall![1]!.body as string)
+      expect(payload.instructions.cook[0].timer_mins).toBeUndefined()
+    })
+  })
+
+  it('omits timer_mins when clearing an existing positive timer', async () => {
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.resolve({ ok: true, json: async () => ({ ...mockRecipe, id: 1 }) } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
+    })
+
+    const timerInput = screen.getByLabelText(/Cooking step 1 timer in minutes/i)
+    fireEvent.change(timerInput, { target: { value: '' } })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      const putCall = vi.mocked(fetch).mock.calls.find((call) => 
+        call[0].toString().includes('/recipes/1') && call[1]?.method === 'PUT'
+      )
+      expect(putCall).toBeDefined()
+      const payload = JSON.parse(putCall![1]!.body as string)
+      expect(payload.instructions.cook[0].timer_mins).toBeUndefined()
     })
   })
 })

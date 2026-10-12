@@ -2,7 +2,7 @@ export interface InstructionStep {
   step: number;
   action: string;
   description?: string;
-  timer_mins?: number;
+  timer_mins?: number | null;
 }
 
 export interface RecipeInstructions {
