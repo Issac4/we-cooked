@@ -636,7 +636,7 @@ function RecipeDetails() {
                         <div className="pt-1 flex-1">
                           <div className="flex justify-between items-start mb-2">
                             <h3 className="text-xl font-bold text-slate-800">{step.action}</h3>
-                            {step.timer_mins && (
+                            {Boolean(step.timer_mins && step.timer_mins > 0) && (
                               <Badge className="bg-slate-100 text-slate-600 border-none px-3 py-1 gap-1">
                                 <Timer className="w-3.5 h-3.5" />
                                 {step.timer_mins}m
