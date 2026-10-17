@@ -16,7 +16,7 @@ export default function EditRecipe() {
   const [mealTypes, setMealTypes] = useState<MealType[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,9 +38,9 @@ export default function EditRecipe() {
         setMealTypes(mealTypeData)
       } catch (err: unknown) {
         if (err instanceof Error) {
-          setError(err.message)
+          setFetchError(err.message)
         } else {
-          setError('An unknown error occurred')
+          setFetchError('An unknown error occurred')
         }
       } finally {
         setLoading(false)
@@ -52,7 +52,6 @@ export default function EditRecipe() {
 
   const handleSubmit = async (formData: RecipeCreate, imageFile: File | null) => {
     setSubmitting(true)
-    setError(null)
 
     try {
       let cover_image_url = formData.cover_image_url
@@ -91,7 +90,6 @@ export default function EditRecipe() {
       navigate(`/recipe/${id}`)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'An unknown error occurred'
-      setError(msg)
       toast.error(msg)
       setSubmitting(false)
       throw err
@@ -107,12 +105,12 @@ export default function EditRecipe() {
     )
   }
 
-  if (error || !recipe) {
+  if (fetchError || !recipe) {
     return (
       <div className="p-8 max-w-md mx-auto py-20 text-center">
         <div className="bg-red-50 border border-red-100 p-8 rounded-[2rem] shadow-sm">
             <h2 className="text-2xl font-black text-red-700 mb-2">Error</h2>
-            <p className="text-slate-600 mb-6">{error || 'Recipe not found'}</p>
+            <p className="text-slate-600 mb-6">{fetchError || 'Recipe not found'}</p>
             <Link to="/" className={cn(buttonVariants({ variant: "default" }), "w-full rounded-xl")}>
                 Back to Dashboard
             </Link>
