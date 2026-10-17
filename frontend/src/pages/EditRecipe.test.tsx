@@ -512,5 +512,66 @@ describe('EditRecipe Page', () => {
       expect(payload).toHaveProperty('cover_image_url', '/uploads/draft-image.jpg')
     })
   })
+
+  it('keeps RecipeForm mounted with user edits intact when PUT submission fails and allows retry', async () => {
+    let putAttempts = 0
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        putAttempts++
+        if (putAttempts === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 500,
+            json: async () => ({ detail: 'Database connection error' })
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ ...mockRecipe, title: 'Edited Recipe Title', id: 1 })
+        } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    const titleInput = await screen.findByDisplayValue('Existing Recipe')
+    fireEvent.change(titleInput, { target: { value: 'Edited Recipe Title' } })
+
+    const ingredientAmountInput = screen.getByDisplayValue('500g')
+    fireEvent.change(ingredientAmountInput, { target: { value: '750g' } })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    // Error message should be displayed, but form must stay mounted with edits intact
+    await waitFor(() => {
+      expect(screen.getByText(/Database connection error/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByRole('link', { name: /Back to Dashboard/i })).not.toBeInTheDocument()
+    expect(screen.getByDisplayValue('Edited Recipe Title')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('750g')).toBeInTheDocument()
+
+    // User can retry submission and succeed
+    const retrySaveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    expect(retrySaveBtn).not.toBeDisabled()
+    fireEvent.click(retrySaveBtn)
+
+    await waitFor(() => {
+      expect(putAttempts).toBe(2)
+    })
+  })
 })
+
 
