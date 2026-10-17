@@ -744,6 +744,9 @@ describe('EditRecipe Page', () => {
           json: async () => ({ url: '/uploads/uploaded-once.png' })
         } as Response)
       }
+      if (url.toString().includes('/uploads/uploaded-once.png') && init?.method === 'HEAD') {
+        return Promise.resolve({ ok: true, status: 200 } as Response)
+      }
       if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
         putCalls++
         if (putCalls === 1) {
@@ -786,7 +789,7 @@ describe('EditRecipe Page', () => {
       expect(putCalls).toBe(2)
     })
 
-    // Image must not be uploaded a second time
+    // Image must not be uploaded a second time when asset still exists
     expect(uploadCalls).toBe(1)
 
     const putRequests = vi.mocked(fetch).mock.calls.filter(
@@ -795,6 +798,94 @@ describe('EditRecipe Page', () => {
     expect(putRequests).toHaveLength(2)
     const retryPayload = JSON.parse(putRequests[1][1]!.body as string)
     expect(retryPayload.cover_image_url).toBe('/uploads/uploaded-once.png')
+  })
+
+  it('re-uploads the retained image file on retry when the cached upload was deleted by cleanup between attempts', async () => {
+    let uploadCalls = 0
+    let putCalls = 0
+    const existingAssets = new Set<string>()
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      const urlStr = url.toString()
+      if (urlStr.includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (urlStr.includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (urlStr.includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (urlStr.includes('/uploads/') && init?.method === 'POST') {
+        uploadCalls++
+        const uploadedUrl = `/static/uploads/upload-${uploadCalls}.png`
+        existingAssets.add(uploadedUrl)
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ url: uploadedUrl })
+        } as Response)
+      }
+      if (urlStr.includes('/static/uploads/') && init?.method === 'HEAD') {
+        const assetPath = new URL(urlStr, 'http://localhost:8000').pathname
+        const exists = existingAssets.has(assetPath)
+        return Promise.resolve({
+          ok: exists,
+          status: exists ? 200 : 404
+        } as Response)
+      }
+      if (urlStr.includes('/recipes/1') && init?.method === 'PUT') {
+        putCalls++
+        if (putCalls === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 500,
+            json: async () => ({ detail: 'Temporary server error' })
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ ...mockRecipe, cover_image_url: '/static/uploads/upload-2.png', id: 1 })
+        } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await screen.findByDisplayValue('Existing Recipe')
+
+    const fileInput = screen.getByLabelText(/Upload recipe image/i) as HTMLInputElement
+    const file = new File(['image-bytes'], 'photo.png', { type: 'image/png' })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Temporary server error/i)).toBeInTheDocument()
+    })
+
+    expect(uploadCalls).toBe(1)
+    expect(putCalls).toBe(1)
+
+    // Simulate orphaned asset janitor deleting the unreferenced first upload before the user retries
+    existingAssets.delete('/static/uploads/upload-1.png')
+
+    fireEvent.click(screen.getByRole('button', { name: /Update Recipe/i }))
+
+    await waitFor(() => {
+      expect(putCalls).toBe(2)
+    })
+
+    // Must re-upload the retained File and persist the new valid URL
+    expect(uploadCalls).toBe(2)
+
+    const putRequests = vi.mocked(fetch).mock.calls.filter(
+      (call) => call[0].toString().includes('/recipes/1') && call[1]?.method === 'PUT'
+    )
+    expect(putRequests).toHaveLength(2)
+    const retryPayload = JSON.parse(putRequests[1][1]!.body as string)
+    expect(retryPayload.cover_image_url).toBe('/static/uploads/upload-2.png')
   })
 })
 

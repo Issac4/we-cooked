@@ -59,8 +59,20 @@ export default function EditRecipe() {
 
       // 1. Upload image if NEW file selected
       if (imageFile) {
+        let reusableUrl: string | null = null
         if (uploadedImageRef.current?.file === imageFile) {
-          cover_image_url = uploadedImageRef.current.url
+          const checkRes = await apiFetch(uploadedImageRef.current.url, {
+            method: 'HEAD'
+          }).catch(() => null)
+          if (checkRes?.ok) {
+            reusableUrl = uploadedImageRef.current.url
+          } else {
+            uploadedImageRef.current = null
+          }
+        }
+
+        if (reusableUrl) {
+          cover_image_url = reusableUrl
         } else {
           const uploadFormData = new FormData()
           uploadFormData.append('file', imageFile)
