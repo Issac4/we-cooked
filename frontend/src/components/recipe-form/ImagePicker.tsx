@@ -48,6 +48,9 @@ export const ImagePicker = () => {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation()
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = ''
+                  }
                   removeImage()
                 }}
                 className="rounded-full gap-2"

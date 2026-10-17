@@ -192,6 +192,43 @@ async def test_update_recipe_partial(client: AsyncClient, auth_headers: dict):
     assert len(data["instructions"]["prep"]) == 1
 
 @pytest.mark.asyncio
+async def test_update_recipe_cover_image_removal(client: AsyncClient, auth_headers: dict):
+    # 1. Create a recipe with a cover_image_url
+    initial_recipe = {
+        "title": "Recipe With Image",
+        "protein_ids": [1],
+        "meal_type_ids": [1],
+        "cover_image_url": "/static/uploads/cover.jpg",
+        "instructions": {"prep": [], "cook": []},
+        "ingredients": [],
+        "reference_links": [],
+        "attributes": {}
+    }
+    create_res = await client.post("/recipes/", json=initial_recipe, headers=auth_headers)
+    assert create_res.status_code == 201
+    recipe_id = create_res.json()["id"]
+    assert create_res.json()["cover_image_url"] == "/static/uploads/cover.jpg"
+
+    # 2. Partial update omitting cover_image_url preserves the existing image
+    preserve_res = await client.put(f"/recipes/{recipe_id}", json={"title": "Renamed Recipe"}, headers=auth_headers)
+    assert preserve_res.status_code == 200
+    assert preserve_res.json()["cover_image_url"] == "/static/uploads/cover.jpg"
+
+    # 3. Update with explicit cover_image_url: null clears the column in the database
+    clear_res = await client.put(
+        f"/recipes/{recipe_id}",
+        json={"title": "Renamed Recipe", "cover_image_url": None},
+        headers=auth_headers
+    )
+    assert clear_res.status_code == 200
+    assert clear_res.json()["cover_image_url"] is None
+
+    # 4. Subsequent GET confirms cover_image_url remains None
+    get_res = await client.get(f"/recipes/{recipe_id}")
+    assert get_res.status_code == 200
+    assert get_res.json()["cover_image_url"] is None
+
+@pytest.mark.asyncio
 async def test_update_recipe_meal_types(client: AsyncClient, auth_headers: dict):
     # 1. Create a recipe with meal type 1
     initial_recipe = {
