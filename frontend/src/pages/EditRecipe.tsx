@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -17,6 +17,7 @@ export default function EditRecipe() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const uploadedImageRef = useRef<{ file: File; url: string } | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,22 +59,29 @@ export default function EditRecipe() {
 
       // 1. Upload image if NEW file selected
       if (imageFile) {
-        const uploadFormData = new FormData()
-        uploadFormData.append('file', imageFile)
+        if (uploadedImageRef.current?.file === imageFile) {
+          cover_image_url = uploadedImageRef.current.url
+        } else {
+          const uploadFormData = new FormData()
+          uploadFormData.append('file', imageFile)
 
-        const uploadResponse = await apiFetch('/uploads/', {
-          method: 'POST',
-          body: uploadFormData,
-          headers: {} 
-        })
+          const uploadResponse = await apiFetch('/uploads/', {
+            method: 'POST',
+            body: uploadFormData,
+            headers: {} 
+          })
 
-        if (!uploadResponse.ok) {
-          const uploadErr = await uploadResponse.json().catch(() => null)
-          throw new Error(formatErrorDetail(uploadErr?.detail) || 'Failed to upload image')
+          if (!uploadResponse.ok) {
+            const uploadErr = await uploadResponse.json().catch(() => null)
+            throw new Error(formatErrorDetail(uploadErr?.detail) || 'Failed to upload image')
+          }
+
+          const uploadData = await uploadResponse.json()
+          cover_image_url = uploadData.url
+          uploadedImageRef.current = { file: imageFile, url: uploadData.url }
         }
-
-        const uploadData = await uploadResponse.json()
-        cover_image_url = uploadData.url
+      } else {
+        uploadedImageRef.current = null
       }
 
       // 2. Update recipe

@@ -722,6 +722,80 @@ describe('EditRecipe Page', () => {
     expect(screen.queryByText(/Unexpected token/i)).not.toBeInTheDocument()
     expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
   })
+
+  it('reuses already uploaded image URL on retry when upload succeeds on attempt 1 but PUT fails', async () => {
+    let uploadCalls = 0
+    let putCalls = 0
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/uploads/') && init?.method === 'POST') {
+        uploadCalls++
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ url: '/uploads/uploaded-once.png' })
+        } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        putCalls++
+        if (putCalls === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 500,
+            json: async () => ({ detail: 'Temporary server error' })
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ ...mockRecipe, cover_image_url: '/uploads/uploaded-once.png', id: 1 })
+        } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await screen.findByDisplayValue('Existing Recipe')
+
+    const fileInput = screen.getByLabelText(/Upload recipe image/i) as HTMLInputElement
+    const file = new File(['image-bytes'], 'photo.png', { type: 'image/png' })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Temporary server error/i)).toBeInTheDocument()
+    })
+
+    expect(uploadCalls).toBe(1)
+    expect(putCalls).toBe(1)
+
+    // Retry without selecting a new file
+    fireEvent.click(screen.getByRole('button', { name: /Update Recipe/i }))
+
+    await waitFor(() => {
+      expect(putCalls).toBe(2)
+    })
+
+    // Image must not be uploaded a second time
+    expect(uploadCalls).toBe(1)
+
+    const putRequests = vi.mocked(fetch).mock.calls.filter(
+      (call) => call[0].toString().includes('/recipes/1') && call[1]?.method === 'PUT'
+    )
+    expect(putRequests).toHaveLength(2)
+    const retryPayload = JSON.parse(putRequests[1][1]!.body as string)
+    expect(retryPayload.cover_image_url).toBe('/uploads/uploaded-once.png')
+  })
 })
 
 
