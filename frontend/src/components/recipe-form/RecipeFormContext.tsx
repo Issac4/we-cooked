@@ -145,10 +145,11 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
     if (type === 'number') {
       const inputEl = e.target as HTMLInputElement
       const nativeData = (e.nativeEvent as InputEvent | undefined)?.data
-      const isIncompleteSigned =
-        value === '' && (nativeData === '-' || inputEl.validity?.badInput === true)
+      const isIncompletePrefix =
+        value === '' &&
+        (nativeData === '-' || nativeData === '.' || inputEl.validity?.badInput === true)
 
-      if (isIncompleteSigned) {
+      if (isIncompletePrefix) {
         setEditingValues(prev => ({ ...prev, [name]: '' }))
         setFormData(prev => ({
           ...prev,
@@ -161,9 +162,10 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
       const parsed = Math.round(parseFloat(valStr))
       const nextVal = valStr === '' || !Number.isFinite(parsed) || parsed <= 0 ? 0 : Math.min(parsed, 9999)
       const isInProgressDecimal =
-        /^\d+\.\d*$/.test(valStr) && Number.isFinite(parsed) && parsed >= 0 && parsed <= 9999
+        /^\d*\.\d*$/.test(valStr) && Number.isFinite(parsed) && parsed >= 0 && parsed <= 9999
+      const isInProgressNegative = /^-\d*(?:\.\d*)?$/.test(valStr)
 
-      if (isInProgressDecimal) {
+      if (isInProgressDecimal || isInProgressNegative) {
         if (inputEl.value !== valStr) {
           inputEl.value = valStr
         }

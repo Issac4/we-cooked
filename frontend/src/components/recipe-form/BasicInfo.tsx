@@ -6,6 +6,12 @@ import { useRecipeForm } from './RecipeFormContext'
 export const BasicInfo = () => {
   const { formData, editingValues, handleInputChange, handleInputBlur } = useRecipeForm()
 
+  const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleInputBlur(e as unknown as React.FocusEvent<HTMLInputElement>)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -30,10 +36,12 @@ export const BasicInfo = () => {
             id="servings" 
             name="servings" 
             type="number" 
+            step="any"
             inputMode="numeric"
             value={editingValues.servings ?? formData.servings}
             onChange={handleInputChange}
             onBlur={handleInputBlur}
+            onKeyDown={handleNumericKeyDown}
             min="1"
           />
         </div>
@@ -45,10 +53,12 @@ export const BasicInfo = () => {
             id="prep_time_mins" 
             name="prep_time_mins" 
             type="number" 
+            step="any"
             inputMode="numeric"
             value={editingValues.prep_time_mins ?? formData.prep_time_mins}
             onChange={handleInputChange}
             onBlur={handleInputBlur}
+            onKeyDown={handleNumericKeyDown}
             min="0"
           />
         </div>
@@ -60,10 +70,12 @@ export const BasicInfo = () => {
             id="cook_time_mins" 
             name="cook_time_mins" 
             type="number" 
+            step="any"
             inputMode="numeric"
             value={editingValues.cook_time_mins ?? formData.cook_time_mins}
             onChange={handleInputChange}
             onBlur={handleInputBlur}
+            onKeyDown={handleNumericKeyDown}
             min="0"
           />
         </div>
