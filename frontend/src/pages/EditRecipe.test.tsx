@@ -221,5 +221,110 @@ describe('EditRecipe Page', () => {
       expect(payload).toHaveProperty('cover_image_url', null)
     })
   })
+
+  it('resets the file input value when removing an image so the same file can be re-selected', async () => {
+    vi.mocked(fetch).mockImplementation((url) => {
+      if (url.toString().includes('/recipes/1')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
+    })
+
+    const fileInput = screen.getByLabelText(/Upload recipe image/i) as HTMLInputElement
+    const file = new File(['image-bytes'], 'photo.png', { type: 'image/png' })
+
+    // Simulate selecting a file (in real browsers input.value becomes non-empty)
+    Object.defineProperty(fileInput, 'value', {
+      value: 'C:\\fakepath\\photo.png',
+      writable: true,
+      configurable: true
+    })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    const removeImageBtn = screen.getByRole('button', { name: /^Remove$/i })
+    fireEvent.click(removeImageBtn)
+
+    expect(fileInput.value).toBe('')
+    expect(screen.queryByAltText('Preview')).not.toBeInTheDocument()
+  })
+
+  it('synchronizes imagePreview and clears imageFile when restoring a draft that removed the cover image', async () => {
+    localStorage.setItem(
+      'recipe_draft',
+      JSON.stringify({
+        title: 'Existing Recipe Draft',
+        protein_ids: [1],
+        meal_type_ids: [1],
+        servings: 4,
+        prep_time_mins: 10,
+        cook_time_mins: 20,
+        ingredients: [{ item: 'Chicken', amount: '500g' }],
+        instructions: {
+          prep: [{ step: 1, action: 'Wash chicken', description: '' }],
+          cook: [{ step: 1, action: 'Fry chicken', description: '', timer_mins: 15 }]
+        },
+        reference_links: [],
+        attributes: {},
+        cover_image_url: null
+      })
+    )
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.resolve({ ok: true, json: async () => ({ ...mockRecipe, cover_image_url: null, id: 1 }) } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
+    })
+
+    // Initial recipe has a cover image preview
+    expect(screen.getByAltText('Preview')).toBeInTheDocument()
+
+    // Click Restore on the draft banner
+    const restoreBtn = await screen.findByRole('button', { name: /Restore/i })
+    fireEvent.click(restoreBtn)
+
+    // Preview should be cleared because the restored draft had cover_image_url: null
+    expect(screen.queryByAltText('Preview')).not.toBeInTheDocument()
+    expect(screen.getByDisplayValue('Existing Recipe Draft')).toBeInTheDocument()
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      const putCall = vi.mocked(fetch).mock.calls.find((call) =>
+        call[0].toString().includes('/recipes/1') && call[1]?.method === 'PUT'
+      )
+      expect(putCall).toBeDefined()
+      const payload = JSON.parse(putCall![1]!.body as string)
+      expect(payload).toHaveProperty('cover_image_url', null)
+    })
+  })
 })
 

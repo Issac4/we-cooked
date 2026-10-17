@@ -246,6 +246,7 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
         setImagePreview(reader.result as string)
       }
       reader.readAsDataURL(file)
+      e.target.value = ''
     }
   }, [])
 
@@ -456,8 +457,11 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
   const restoreDraft = useCallback(() => {
     const draft = localStorage.getItem('recipe_draft')
     if (draft) {
+      const parsedDraft: RecipeCreate = JSON.parse(draft)
       setEditingValues({})
-      setFormData(JSON.parse(draft))
+      setFormData(parsedDraft)
+      setImageFile(null)
+      setImagePreview(parsedDraft.cover_image_url || null)
       localStorage.removeItem('recipe_draft')
       setHasDraft(false)
     }
