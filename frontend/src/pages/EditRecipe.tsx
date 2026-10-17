@@ -68,7 +68,8 @@ export default function EditRecipe() {
         })
 
         if (!uploadResponse.ok) {
-          throw new Error('Failed to upload image')
+          const uploadErr = await uploadResponse.json().catch(() => null)
+          throw new Error(formatErrorDetail(uploadErr?.detail) || 'Failed to upload image')
         }
 
         const uploadData = await uploadResponse.json()
@@ -82,8 +83,8 @@ export default function EditRecipe() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(formatErrorDetail(data.detail) || 'Failed to update recipe')
+        const data = await response.json().catch(() => null)
+        throw new Error(formatErrorDetail(data?.detail) || 'Failed to update recipe')
       }
 
       toast.success('Recipe updated successfully!')

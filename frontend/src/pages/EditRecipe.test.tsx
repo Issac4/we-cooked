@@ -621,6 +621,107 @@ describe('EditRecipe Page', () => {
 
     expect(screen.queryByText(/Failed to load form options/i)).not.toBeInTheDocument()
   })
+
+  it('keeps RecipeForm mounted and surfaces upload error detail when image upload fails, allowing retry', async () => {
+    let uploadAttempts = 0
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/uploads/') && init?.method === 'POST') {
+        uploadAttempts++
+        if (uploadAttempts === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            json: async () => ({ detail: 'File size exceeds 5MB limit' })
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ url: '/uploads/new-photo.png' })
+        } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ ...mockRecipe, cover_image_url: '/uploads/new-photo.png', id: 1 })
+        } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    const titleInput = await screen.findByDisplayValue('Existing Recipe')
+    fireEvent.change(titleInput, { target: { value: 'Recipe With New Image' } })
+
+    const fileInput = screen.getByLabelText(/Upload recipe image/i) as HTMLInputElement
+    const file = new File(['image-bytes'], 'photo.png', { type: 'image/png' })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/File size exceeds 5MB limit/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByRole('link', { name: /Back to Dashboard/i })).not.toBeInTheDocument()
+    expect(screen.getByDisplayValue('Recipe With New Image')).toBeInTheDocument()
+
+    // Retry succeeds
+    fireEvent.click(screen.getByRole('button', { name: /Update Recipe/i }))
+
+    await waitFor(() => {
+      expect(uploadAttempts).toBe(2)
+    })
+  })
+
+  it('falls back to a friendly error message when PUT returns a non-JSON 502 response', async () => {
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.resolve({
+          ok: false,
+          status: 502,
+          json: async () => {
+            throw new SyntaxError("Unexpected token '<', \"<html>502\"... is not valid JSON")
+          }
+        } as unknown as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await screen.findByDisplayValue('Existing Recipe')
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Failed to update recipe/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByText(/Unexpected token/i)).not.toBeInTheDocument()
+    expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
+  })
 })
 
 
