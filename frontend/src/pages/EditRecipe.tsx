@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,7 +16,8 @@ export default function EditRecipe() {
   const [mealTypes, setMealTypes] = useState<MealType[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const uploadedImageRef = useRef<{ file: File; url: string } | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,9 +39,9 @@ export default function EditRecipe() {
         setMealTypes(mealTypeData)
       } catch (err: unknown) {
         if (err instanceof Error) {
-          setError(err.message)
+          setFetchError(err.message)
         } else {
-          setError('An unknown error occurred')
+          setFetchError('An unknown error occurred')
         }
       } finally {
         setLoading(false)
@@ -52,28 +53,47 @@ export default function EditRecipe() {
 
   const handleSubmit = async (formData: RecipeCreate, imageFile: File | null) => {
     setSubmitting(true)
-    setError(null)
 
     try {
       let cover_image_url = formData.cover_image_url
 
       // 1. Upload image if NEW file selected
       if (imageFile) {
-        const uploadFormData = new FormData()
-        uploadFormData.append('file', imageFile)
-
-        const uploadResponse = await apiFetch('/uploads/', {
-          method: 'POST',
-          body: uploadFormData,
-          headers: {} 
-        })
-
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload image')
+        let reusableUrl: string | null = null
+        if (uploadedImageRef.current?.file === imageFile) {
+          const checkRes = await apiFetch(uploadedImageRef.current.url, {
+            method: 'HEAD'
+          }).catch(() => null)
+          if (checkRes?.ok) {
+            reusableUrl = uploadedImageRef.current.url
+          } else {
+            uploadedImageRef.current = null
+          }
         }
 
-        const uploadData = await uploadResponse.json()
-        cover_image_url = uploadData.url
+        if (reusableUrl) {
+          cover_image_url = reusableUrl
+        } else {
+          const uploadFormData = new FormData()
+          uploadFormData.append('file', imageFile)
+
+          const uploadResponse = await apiFetch('/uploads/', {
+            method: 'POST',
+            body: uploadFormData,
+            headers: {} 
+          })
+
+          if (!uploadResponse.ok) {
+            const uploadErr = await uploadResponse.json().catch(() => null)
+            throw new Error(formatErrorDetail(uploadErr?.detail) || 'Failed to upload image')
+          }
+
+          const uploadData = await uploadResponse.json()
+          cover_image_url = uploadData.url
+          uploadedImageRef.current = { file: imageFile, url: uploadData.url }
+        }
+      } else {
+        uploadedImageRef.current = null
       }
 
       // 2. Update recipe
@@ -83,20 +103,37 @@ export default function EditRecipe() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(formatErrorDetail(data.detail) || 'Failed to update recipe')
+        const data = await response.json().catch(() => null)
+        throw new Error(formatErrorDetail(data?.detail) || 'Failed to update recipe')
       }
 
       toast.success('Recipe updated successfully!')
       navigate(`/recipe/${id}`)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'An unknown error occurred'
-      setError(msg)
       toast.error(msg)
       setSubmitting(false)
       throw err
     }
   }
+
+  // Transform Recipe to RecipeCreate format for the form
+  const initialData = useMemo<Partial<RecipeCreate> | undefined>(() => {
+    if (!recipe) return undefined
+    return {
+      title: recipe.title,
+      protein_ids: recipe.proteins.map(name => proteins.find(p => p.name === name)?.id).filter(Boolean) as number[],
+      meal_type_ids: recipe.meal_types.map(name => mealTypes.find(mt => mt.name === name)?.id).filter(Boolean) as number[],
+      servings: recipe.servings,
+      prep_time_mins: recipe.prep_time_mins,
+      cook_time_mins: recipe.cook_time_mins,
+      ingredients: recipe.ingredients,
+      instructions: recipe.instructions,
+      reference_links: recipe.reference_links,
+      attributes: recipe.attributes,
+      cover_image_url: recipe.cover_image_url
+    }
+  }, [recipe, proteins, mealTypes])
 
   if (loading) {
     return (
@@ -107,33 +144,18 @@ export default function EditRecipe() {
     )
   }
 
-  if (error || !recipe) {
+  if (fetchError || !recipe) {
     return (
       <div className="p-8 max-w-md mx-auto py-20 text-center">
         <div className="bg-red-50 border border-red-100 p-8 rounded-[2rem] shadow-sm">
             <h2 className="text-2xl font-black text-red-700 mb-2">Error</h2>
-            <p className="text-slate-600 mb-6">{error || 'Recipe not found'}</p>
+            <p className="text-slate-600 mb-6">{fetchError || 'Recipe not found'}</p>
             <Link to="/" className={cn(buttonVariants({ variant: "default" }), "w-full rounded-xl")}>
                 Back to Dashboard
             </Link>
         </div>
       </div>
     )
-  }
-
-  // Transform Recipe to RecipeCreate format for the form
-  const initialData: Partial<RecipeCreate> = {
-    title: recipe.title,
-    protein_ids: recipe.proteins.map(name => proteins.find(p => p.name === name)?.id).filter(Boolean) as number[],
-    meal_type_ids: recipe.meal_types.map(name => mealTypes.find(mt => mt.name === name)?.id).filter(Boolean) as number[],
-    servings: recipe.servings,
-    prep_time_mins: recipe.prep_time_mins,
-    cook_time_mins: recipe.cook_time_mins,
-    ingredients: recipe.ingredients,
-    instructions: recipe.instructions,
-    reference_links: recipe.reference_links,
-    attributes: recipe.attributes,
-    cover_image_url: recipe.cover_image_url
   }
 
   return (

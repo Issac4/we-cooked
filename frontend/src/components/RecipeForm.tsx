@@ -44,6 +44,7 @@ function RecipeFormInner({ onSubmit, loading, submitLabel }: RecipeFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
     if (!formData.title) {
       setError("Recipe title is required")
       return

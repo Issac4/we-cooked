@@ -512,5 +512,382 @@ describe('EditRecipe Page', () => {
       expect(payload).toHaveProperty('cover_image_url', '/uploads/draft-image.jpg')
     })
   })
+
+  it('keeps RecipeForm mounted with user edits intact when PUT submission fails and allows retry', async () => {
+    let putAttempts = 0
+    let resolveRetryPut: ((value: Response) => void) | null = null
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        putAttempts++
+        if (putAttempts === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 500,
+            json: async () => ({ detail: 'Database connection error' })
+          } as Response)
+        }
+        return new Promise<Response>((resolve) => {
+          resolveRetryPut = resolve
+        })
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    const titleInput = await screen.findByDisplayValue('Existing Recipe')
+    fireEvent.change(titleInput, { target: { value: 'Edited Recipe Title' } })
+
+    const ingredientAmountInput = screen.getByDisplayValue('500g')
+    fireEvent.change(ingredientAmountInput, { target: { value: '750g' } })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    // Error message should be displayed, but form must stay mounted with edits intact
+    await waitFor(() => {
+      expect(screen.getByText(/Database connection error/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByRole('link', { name: /Back to Dashboard/i })).not.toBeInTheDocument()
+    expect(screen.getByDisplayValue('Edited Recipe Title')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('750g')).toBeInTheDocument()
+
+    // User can retry submission; stale error banner clears immediately while retry is in-flight
+    const retrySaveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    expect(retrySaveBtn).not.toBeDisabled()
+    fireEvent.click(retrySaveBtn)
+
+    await waitFor(() => {
+      expect(putAttempts).toBe(2)
+      expect(screen.queryByText(/Database connection error/i)).not.toBeInTheDocument()
+    })
+
+    await act(async () => {
+      resolveRetryPut!({
+        ok: true,
+        json: async () => ({ ...mockRecipe, title: 'Edited Recipe Title', id: 1 })
+      } as Response)
+    })
+  })
+
+  it('does not re-fetch form options or overwrite the submit error when PUT fails due to a network error', async () => {
+    let initialLoaded = false
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        if (initialLoaded) {
+          return Promise.reject(new Error('Network offline'))
+        }
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        if (initialLoaded) {
+          return Promise.reject(new Error('Network offline'))
+        }
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.reject(new Error('Network offline'))
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await screen.findByDisplayValue('Existing Recipe')
+    await screen.findByRole('button', { name: 'Chicken' })
+    initialLoaded = true
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Network offline/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByText(/Failed to load form options/i)).not.toBeInTheDocument()
+  })
+
+  it('keeps RecipeForm mounted and surfaces upload error detail when image upload fails, allowing retry', async () => {
+    let uploadAttempts = 0
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/uploads/') && init?.method === 'POST') {
+        uploadAttempts++
+        if (uploadAttempts === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            json: async () => ({ detail: 'File size exceeds 5MB limit' })
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ url: '/uploads/new-photo.png' })
+        } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ ...mockRecipe, cover_image_url: '/uploads/new-photo.png', id: 1 })
+        } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    const titleInput = await screen.findByDisplayValue('Existing Recipe')
+    fireEvent.change(titleInput, { target: { value: 'Recipe With New Image' } })
+
+    const fileInput = screen.getByLabelText(/Upload recipe image/i) as HTMLInputElement
+    const file = new File(['image-bytes'], 'photo.png', { type: 'image/png' })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/File size exceeds 5MB limit/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByRole('link', { name: /Back to Dashboard/i })).not.toBeInTheDocument()
+    expect(screen.getByDisplayValue('Recipe With New Image')).toBeInTheDocument()
+
+    // Retry succeeds
+    fireEvent.click(screen.getByRole('button', { name: /Update Recipe/i }))
+
+    await waitFor(() => {
+      expect(uploadAttempts).toBe(2)
+    })
+  })
+
+  it('falls back to a friendly error message when PUT returns a non-JSON 502 response', async () => {
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.resolve({
+          ok: false,
+          status: 502,
+          json: async () => {
+            throw new SyntaxError("Unexpected token '<', \"<html>502\"... is not valid JSON")
+          }
+        } as unknown as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await screen.findByDisplayValue('Existing Recipe')
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Failed to update recipe/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByText(/Unexpected token/i)).not.toBeInTheDocument()
+    expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
+  })
+
+  it('reuses already uploaded image URL on retry when upload succeeds on attempt 1 but PUT fails', async () => {
+    let uploadCalls = 0
+    let putCalls = 0
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/uploads/') && init?.method === 'POST') {
+        uploadCalls++
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ url: '/uploads/uploaded-once.png' })
+        } as Response)
+      }
+      if (url.toString().includes('/uploads/uploaded-once.png') && init?.method === 'HEAD') {
+        return Promise.resolve({ ok: true, status: 200 } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        putCalls++
+        if (putCalls === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 500,
+            json: async () => ({ detail: 'Temporary server error' })
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ ...mockRecipe, cover_image_url: '/uploads/uploaded-once.png', id: 1 })
+        } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await screen.findByDisplayValue('Existing Recipe')
+
+    const fileInput = screen.getByLabelText(/Upload recipe image/i) as HTMLInputElement
+    const file = new File(['image-bytes'], 'photo.png', { type: 'image/png' })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Temporary server error/i)).toBeInTheDocument()
+    })
+
+    expect(uploadCalls).toBe(1)
+    expect(putCalls).toBe(1)
+
+    // Retry without selecting a new file
+    fireEvent.click(screen.getByRole('button', { name: /Update Recipe/i }))
+
+    await waitFor(() => {
+      expect(putCalls).toBe(2)
+    })
+
+    // Image must not be uploaded a second time when asset still exists
+    expect(uploadCalls).toBe(1)
+
+    const putRequests = vi.mocked(fetch).mock.calls.filter(
+      (call) => call[0].toString().includes('/recipes/1') && call[1]?.method === 'PUT'
+    )
+    expect(putRequests).toHaveLength(2)
+    const retryPayload = JSON.parse(putRequests[1][1]!.body as string)
+    expect(retryPayload.cover_image_url).toBe('/uploads/uploaded-once.png')
+  })
+
+  it('re-uploads the retained image file on retry when the cached upload was deleted by cleanup between attempts', async () => {
+    let uploadCalls = 0
+    let putCalls = 0
+    const existingAssets = new Set<string>()
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      const urlStr = url.toString()
+      if (urlStr.includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (urlStr.includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (urlStr.includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (urlStr.includes('/uploads/') && init?.method === 'POST') {
+        uploadCalls++
+        const uploadedUrl = `/static/uploads/upload-${uploadCalls}.png`
+        existingAssets.add(uploadedUrl)
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ url: uploadedUrl })
+        } as Response)
+      }
+      if (urlStr.includes('/static/uploads/') && init?.method === 'HEAD') {
+        const assetPath = new URL(urlStr, 'http://localhost:8000').pathname
+        const exists = existingAssets.has(assetPath)
+        return Promise.resolve({
+          ok: exists,
+          status: exists ? 200 : 404
+        } as Response)
+      }
+      if (urlStr.includes('/recipes/1') && init?.method === 'PUT') {
+        putCalls++
+        if (putCalls === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 500,
+            json: async () => ({ detail: 'Temporary server error' })
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ ...mockRecipe, cover_image_url: '/static/uploads/upload-2.png', id: 1 })
+        } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await screen.findByDisplayValue('Existing Recipe')
+
+    const fileInput = screen.getByLabelText(/Upload recipe image/i) as HTMLInputElement
+    const file = new File(['image-bytes'], 'photo.png', { type: 'image/png' })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Temporary server error/i)).toBeInTheDocument()
+    })
+
+    expect(uploadCalls).toBe(1)
+    expect(putCalls).toBe(1)
+
+    // Simulate orphaned asset janitor deleting the unreferenced first upload before the user retries
+    existingAssets.delete('/static/uploads/upload-1.png')
+
+    fireEvent.click(screen.getByRole('button', { name: /Update Recipe/i }))
+
+    await waitFor(() => {
+      expect(putCalls).toBe(2)
+    })
+
+    // Must re-upload the retained File and persist the new valid URL
+    expect(uploadCalls).toBe(2)
+
+    const putRequests = vi.mocked(fetch).mock.calls.filter(
+      (call) => call[0].toString().includes('/recipes/1') && call[1]?.method === 'PUT'
+    )
+    expect(putRequests).toHaveLength(2)
+    const retryPayload = JSON.parse(putRequests[1][1]!.body as string)
+    expect(retryPayload.cover_image_url).toBe('/static/uploads/upload-2.png')
+  })
 })
+
+
 
