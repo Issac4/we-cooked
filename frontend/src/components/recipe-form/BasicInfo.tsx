@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label'
 import { useRecipeForm } from './RecipeFormContext'
 
 export const BasicInfo = () => {
-  const { formData, handleInputChange } = useRecipeForm()
+  const { formData, editingValues, handleInputChange, handleInputBlur } = useRecipeForm()
 
   return (
     <div className="space-y-6">
@@ -31,10 +31,10 @@ export const BasicInfo = () => {
             name="servings" 
             type="number" 
             inputMode="numeric"
-            value={formData.servings}
+            value={editingValues.servings ?? formData.servings}
             onChange={handleInputChange}
+            onBlur={handleInputBlur}
             min="1"
-            max="9999"
           />
         </div>
         <div className="space-y-2">
@@ -46,10 +46,10 @@ export const BasicInfo = () => {
             name="prep_time_mins" 
             type="number" 
             inputMode="numeric"
-            value={formData.prep_time_mins}
+            value={editingValues.prep_time_mins ?? formData.prep_time_mins}
             onChange={handleInputChange}
+            onBlur={handleInputBlur}
             min="0"
-            max="9999"
           />
         </div>
         <div className="space-y-2">
@@ -61,10 +61,10 @@ export const BasicInfo = () => {
             name="cook_time_mins" 
             type="number" 
             inputMode="numeric"
-            value={formData.cook_time_mins}
+            value={editingValues.cook_time_mins ?? formData.cook_time_mins}
             onChange={handleInputChange}
+            onBlur={handleInputBlur}
             min="0"
-            max="9999"
           />
         </div>
       </div>

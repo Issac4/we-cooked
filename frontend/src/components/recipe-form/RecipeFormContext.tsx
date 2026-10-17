@@ -34,7 +34,9 @@ interface RecipeFormContextType {
   setNewMealTypeName: (name: string) => void;
   setShowMarkdownHelp: (show: boolean) => void;
 
+  editingValues: Record<string, string>;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleInputBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   toggleProtein: (id: number) => void;
   toggleMealType: (id: number) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -80,6 +82,7 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
   const [imagePreview, setImagePreview] = useState<string | null>(initialData?.cover_image_url || null)
   const [showMarkdownHelp, setShowMarkdownHelp] = useState(false)
   const [previews, setPreviews] = useState<Record<string, boolean>>({})
+  const [editingValues, setEditingValues] = useState<Record<string, string>>({})
 
   // Options from API
   const [proteins, setProteins] = useState<Protein[]>([])
@@ -140,10 +143,44 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
     if (type === 'number') {
+      const inputEl = e.target as HTMLInputElement
+      const nativeData = (e.nativeEvent as InputEvent | undefined)?.data
+      const isIncompleteSigned =
+        value === '' && (nativeData === '-' || inputEl.validity?.badInput === true)
+
+      if (isIncompleteSigned) {
+        setEditingValues(prev => ({ ...prev, [name]: '' }))
+        setFormData(prev => ({
+          ...prev,
+          [name]: 0
+        }))
+        return
+      }
+
       const valStr = value.trim().replace(/^0+(?=\d)/, '')
       const parsed = Math.round(parseFloat(valStr))
       const nextVal = valStr === '' || !Number.isFinite(parsed) || parsed <= 0 ? 0 : Math.min(parsed, 9999)
-      e.target.value = String(nextVal)
+      const isInProgressDecimal =
+        /^\d+\.\d*$/.test(valStr) && Number.isFinite(parsed) && parsed >= 0 && parsed <= 9999
+
+      if (isInProgressDecimal) {
+        if (inputEl.value !== valStr) {
+          inputEl.value = valStr
+        }
+        setEditingValues(prev => ({ ...prev, [name]: valStr }))
+      } else {
+        const normalizedStr = String(nextVal)
+        if (inputEl.value !== normalizedStr) {
+          inputEl.value = normalizedStr
+        }
+        setEditingValues(prev => {
+          if (!(name in prev)) return prev
+          const next = { ...prev }
+          delete next[name]
+          return next
+        })
+      }
+
       setFormData(prev => ({
         ...prev,
         [name]: nextVal
@@ -155,6 +192,22 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
       [name]: value
     }))
   }, [])
+
+  const handleInputBlur = useCallback((e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, type } = e.target
+    if (type === 'number') {
+      const normalizedStr = String(formData[name as keyof RecipeCreate] ?? 0)
+      if (e.target.value !== normalizedStr) {
+        e.target.value = normalizedStr
+      }
+      setEditingValues(prev => {
+        if (!(name in prev)) return prev
+        const next = { ...prev }
+        delete next[name]
+        return next
+      })
+    }
+  }, [formData])
 
   const toggleProtein = useCallback((id: number) => {
     setFormData(prev => ({
@@ -393,6 +446,7 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
   const restoreDraft = useCallback(() => {
     const draft = localStorage.getItem('recipe_draft')
     if (draft) {
+      setEditingValues({})
       setFormData(JSON.parse(draft))
       localStorage.removeItem('recipe_draft')
       setHasDraft(false)
@@ -438,7 +492,9 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
     setShowAddMealType,
     setNewMealTypeName,
     setShowMarkdownHelp,
+    editingValues,
     handleInputChange,
+    handleInputBlur,
     toggleProtein,
     toggleMealType,
     handleFileChange,
