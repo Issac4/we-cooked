@@ -111,6 +111,22 @@ test.describe('Navigation & Page Loading', () => {
     await prepInput.blur();
     await expect(prepInput).toHaveValue('0');
 
+    // Sequential scientific-notation entry (1e12 -> 9999, 1e-12 -> 0, -1e23 -> 0)
+    await prepInput.selectText();
+    await prepInput.pressSequentially('1e12');
+    await prepInput.press('Enter');
+    await expect(prepInput).toHaveValue('9999');
+
+    await prepInput.selectText();
+    await prepInput.pressSequentially('1e-12');
+    await prepInput.press('Enter');
+    await expect(prepInput).toHaveValue('0');
+
+    await prepInput.selectText();
+    await prepInput.pressSequentially('-1e23');
+    await prepInput.press('Enter');
+    await expect(prepInput).toHaveValue('0');
+
     // 4. Settings Page
     await page.goto('/settings');
     await expect(page).toHaveURL(/\/settings/);

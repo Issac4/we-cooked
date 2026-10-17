@@ -258,26 +258,44 @@ describe('BasicInfo Numeric Time Inputs (Issue #3)', () => {
     expect(screen.getByTestId('prep-state').textContent).toBe('1')
     fireEvent.blur(prepInput)
     expect(prepInput.value).toBe('1')
+
+    // Scientific notation: 1e12 -> 9999, 1e-12 -> 0, -1e23 -> 0
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('1e12{Enter}')
+    expect(screen.getByTestId('prep-state').textContent).toBe('9999')
+    expect(prepInput.value).toBe('9999')
+
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('1e-12{Enter}')
+    expect(screen.getByTestId('prep-state').textContent).toBe('0')
+    expect(prepInput.value).toBe('0')
+
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('-1e23{Enter}')
+    expect(screen.getByTestId('prep-state').textContent).toBe('0')
+    expect(prepInput.value).toBe('0')
   })
 
-  it('caps edited input values at 9999 without setting rangeOverflow on existing values > 9999', async () => {
-    await renderBasicInfo({ prep_time_mins: 10080 })
+  it('caps input values at 9999 to prevent integer overflow or layout breaks', async () => {
+    await renderBasicInfo()
 
     const servingsInput = screen.getByLabelText(/Servings/i) as HTMLInputElement
     const prepInput = screen.getByLabelText(/Prep Time \(mins\)/i) as HTMLInputElement
     const cookInput = screen.getByLabelText(/Cook Time \(mins\)/i) as HTMLInputElement
 
-    // Existing duration > 9999 does not trigger native rangeOverflow
-    expect(prepInput.value).toBe('10080')
-    expect(prepInput.validity.rangeOverflow).toBe(false)
-
     expect(servingsInput).toHaveAttribute('min', '1')
+    expect(servingsInput).toHaveAttribute('max', '9999')
     expect(servingsInput).toHaveAttribute('step', 'any')
     expect(servingsInput).toHaveAttribute('inputMode', 'numeric')
     expect(prepInput).toHaveAttribute('min', '0')
+    expect(prepInput).toHaveAttribute('max', '9999')
     expect(prepInput).toHaveAttribute('step', 'any')
     expect(prepInput).toHaveAttribute('inputMode', 'numeric')
     expect(cookInput).toHaveAttribute('min', '0')
+    expect(cookInput).toHaveAttribute('max', '9999')
     expect(cookInput).toHaveAttribute('step', 'any')
     expect(cookInput).toHaveAttribute('inputMode', 'numeric')
 
