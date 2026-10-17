@@ -139,9 +139,20 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
+    if (type === 'number') {
+      const valStr = value.trim().replace(/^0+(?=\d)/, '')
+      const parsed = Math.round(parseFloat(valStr))
+      const nextVal = valStr === '' || !Number.isFinite(parsed) || parsed <= 0 ? 0 : Math.min(parsed, 9999)
+      e.target.value = String(nextVal)
+      setFormData(prev => ({
+        ...prev,
+        [name]: nextVal
+      }))
+      return
+    }
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseInt(value) || 0 : value
+      [name]: value
     }))
   }, [])
 

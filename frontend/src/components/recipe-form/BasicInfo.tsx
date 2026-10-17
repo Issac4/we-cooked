@@ -30,9 +30,11 @@ export const BasicInfo = () => {
             id="servings" 
             name="servings" 
             type="number" 
+            inputMode="numeric"
             value={formData.servings}
             onChange={handleInputChange}
             min="1"
+            max="9999"
           />
         </div>
         <div className="space-y-2">
@@ -43,9 +45,11 @@ export const BasicInfo = () => {
             id="prep_time_mins" 
             name="prep_time_mins" 
             type="number" 
+            inputMode="numeric"
             value={formData.prep_time_mins}
             onChange={handleInputChange}
             min="0"
+            max="9999"
           />
         </div>
         <div className="space-y-2">
@@ -56,9 +60,11 @@ export const BasicInfo = () => {
             id="cook_time_mins" 
             name="cook_time_mins" 
             type="number" 
+            inputMode="numeric"
             value={formData.cook_time_mins}
             onChange={handleInputChange}
             min="0"
+            max="9999"
           />
         </div>
       </div>
