@@ -126,29 +126,50 @@ describe('BasicInfo Numeric Time Inputs (Issue #3)', () => {
     expect(screen.getByTestId('prep-is-positive-zero').textContent).toBe('true')
   })
 
-  it('sanitizes non-numeric, negative, sequential -5, -0.1, and Infinity inputs safely back to +0', async () => {
+  it('sanitizes non-numeric, negative (-5, -15, -123, -0.5), and Infinity inputs safely back to +0', async () => {
     const user = userEvent.setup()
     await renderBasicInfo({ prep_time_mins: 20 })
 
     const prepInput = screen.getByLabelText(/Prep Time \(mins\)/i) as HTMLInputElement
 
-    // Pasted / direct negative string
+    // Pasted / direct negative string normalizes state immediately and input on blur
     fireEvent.change(prepInput, { target: { value: '-10' } })
-    expect(prepInput.value).toBe('0')
     expect(screen.getByTestId('prep-state').textContent).toBe('0')
+    fireEvent.blur(prepInput)
+    expect(prepInput.value).toBe('0')
 
-    // Sequential typing of '-5' after selecting field contents
+    // Sequential typing of '-5'
     fireEvent.change(prepInput, { target: { value: '20' } })
     prepInput.focus()
     prepInput.select()
     await user.keyboard('-5')
-    expect(prepInput.value).toBe('0')
     expect(screen.getByTestId('prep-state').textContent).toBe('0')
-
-    fireEvent.change(prepInput, { target: { value: '-0.1' } })
+    fireEvent.blur(prepInput)
     expect(prepInput.value).toBe('0')
+
+    // Sequential typing of multi-digit '-15' and '-123' must never become positive 5 or 23
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('-15')
+    expect(screen.getByTestId('prep-state').textContent).toBe('0')
+    fireEvent.blur(prepInput)
+    expect(prepInput.value).toBe('0')
+
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('-123')
+    expect(screen.getByTestId('prep-state').textContent).toBe('0')
+    fireEvent.blur(prepInput)
+    expect(prepInput.value).toBe('0')
+
+    // Sequential typing of negative decimal '-0.5'
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('-0.5')
     expect(screen.getByTestId('prep-state').textContent).toBe('0')
     expect(screen.getByTestId('prep-is-positive-zero').textContent).toBe('true')
+    fireEvent.blur(prepInput)
+    expect(prepInput.value).toBe('0')
 
     fireEvent.change(prepInput, { target: { value: 'abc' } })
     expect(prepInput.value).toBe('0')
@@ -188,7 +209,7 @@ describe('BasicInfo Numeric Time Inputs (Issue #3)', () => {
     expect(screen.getByTestId('prep-state').textContent).toBe('253')
   })
 
-  it('handles whitespace and rounds multi-digit decimal inputs (1.25 -> 1, 1.49 -> 1, 1.5 -> 2) without corrupting keystrokes', async () => {
+  it('handles whitespace, leading-dot decimals (.25 -> 0, .75 -> 1), multi-digit decimals (1.25 -> 1, 1.49 -> 1, 1.5 -> 2), and Enter normalization', async () => {
     const user = userEvent.setup()
     await renderBasicInfo()
 
@@ -203,15 +224,16 @@ describe('BasicInfo Numeric Time Inputs (Issue #3)', () => {
     prepInput.select()
     await user.keyboard('1.25')
     expect(screen.getByTestId('prep-state').textContent).toBe('1')
+    expect(prepInput.validity.stepMismatch).toBe(false)
     fireEvent.blur(prepInput)
     expect(prepInput.value).toBe('1')
 
-    // Sequential typing of 1.49 -> state is 1 (not 19), and rounds input to 1 on blur
+    // Sequential typing of 1.49 -> state is 1 (not 19), and normalizes immediately on Enter keydown
     prepInput.focus()
     prepInput.select()
     await user.keyboard('1.49')
     expect(screen.getByTestId('prep-state').textContent).toBe('1')
-    fireEvent.blur(prepInput)
+    await user.keyboard('{Enter}')
     expect(prepInput.value).toBe('1')
 
     // Sequential typing of 1.5 -> state is 2, and rounds input to 2 on blur
@@ -221,6 +243,21 @@ describe('BasicInfo Numeric Time Inputs (Issue #3)', () => {
     expect(screen.getByTestId('prep-state').textContent).toBe('2')
     fireEvent.blur(prepInput)
     expect(prepInput.value).toBe('2')
+
+    // Leading-dot decimals: .25 -> 0 and .75 -> 1
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('.25')
+    expect(screen.getByTestId('prep-state').textContent).toBe('0')
+    fireEvent.blur(prepInput)
+    expect(prepInput.value).toBe('0')
+
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('.75')
+    expect(screen.getByTestId('prep-state').textContent).toBe('1')
+    fireEvent.blur(prepInput)
+    expect(prepInput.value).toBe('1')
   })
 
   it('caps edited input values at 9999 without setting rangeOverflow on existing values > 9999', async () => {
@@ -235,10 +272,13 @@ describe('BasicInfo Numeric Time Inputs (Issue #3)', () => {
     expect(prepInput.validity.rangeOverflow).toBe(false)
 
     expect(servingsInput).toHaveAttribute('min', '1')
+    expect(servingsInput).toHaveAttribute('step', 'any')
     expect(servingsInput).toHaveAttribute('inputMode', 'numeric')
     expect(prepInput).toHaveAttribute('min', '0')
+    expect(prepInput).toHaveAttribute('step', 'any')
     expect(prepInput).toHaveAttribute('inputMode', 'numeric')
     expect(cookInput).toHaveAttribute('min', '0')
+    expect(cookInput).toHaveAttribute('step', 'any')
     expect(cookInput).toHaveAttribute('inputMode', 'numeric')
 
     fireEvent.change(prepInput, { target: { value: '25000' } })

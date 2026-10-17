@@ -69,7 +69,7 @@ test.describe('Navigation & Page Loading', () => {
     await prepInput.pressSequentially('15');
     await expect(prepInput).toHaveValue('15');
 
-    // Sequential decimal entry (1.25 -> 1, 1.49 -> 1)
+    // Sequential decimal entry (1.25 -> 1, 1.49 -> 1, .25 -> 0, .75 -> 1)
     await prepInput.selectText();
     await prepInput.pressSequentially('1.25');
     await prepInput.blur();
@@ -77,12 +77,38 @@ test.describe('Navigation & Page Loading', () => {
 
     await prepInput.selectText();
     await prepInput.pressSequentially('1.49');
+    await prepInput.press('Enter');
+    await expect(prepInput).toHaveValue('1');
+
+    await prepInput.selectText();
+    await prepInput.pressSequentially('.25');
+    await prepInput.blur();
+    await expect(prepInput).toHaveValue('0');
+
+    await prepInput.selectText();
+    await prepInput.pressSequentially('.75');
     await prepInput.blur();
     await expect(prepInput).toHaveValue('1');
 
-    // Sequential negative entry (-5 -> 0)
+    // Sequential single and multi-digit negative entry (-5, -15, -123, -0.5 -> 0)
     await prepInput.selectText();
     await prepInput.pressSequentially('-5');
+    await prepInput.blur();
+    await expect(prepInput).toHaveValue('0');
+
+    await prepInput.selectText();
+    await prepInput.pressSequentially('-15');
+    await prepInput.blur();
+    await expect(prepInput).toHaveValue('0');
+
+    await prepInput.selectText();
+    await prepInput.pressSequentially('-123');
+    await prepInput.blur();
+    await expect(prepInput).toHaveValue('0');
+
+    await prepInput.selectText();
+    await prepInput.pressSequentially('-0.5');
+    await prepInput.blur();
     await expect(prepInput).toHaveValue('0');
 
     // 4. Settings Page
