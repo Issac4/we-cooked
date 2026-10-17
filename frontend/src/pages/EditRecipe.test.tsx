@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import EditRecipe from './EditRecipe'
 import { AuthProvider } from '../context/AuthContext'
@@ -324,6 +324,192 @@ describe('EditRecipe Page', () => {
       expect(putCall).toBeDefined()
       const payload = JSON.parse(putCall![1]!.body as string)
       expect(payload).toHaveProperty('cover_image_url', null)
+    })
+  })
+
+  it('normalizes missing cover_image_url in restored draft to null so preview and PUT payload agree', async () => {
+    // Draft saved from a recipe without cover_image_url (where undefined was omitted by JSON.stringify)
+    localStorage.setItem(
+      'recipe_draft',
+      JSON.stringify({
+        title: 'Draft Without Cover Image Key',
+        protein_ids: [1],
+        meal_type_ids: [1],
+        servings: 4,
+        prep_time_mins: 10,
+        cook_time_mins: 20,
+        ingredients: [{ item: 'Chicken', amount: '500g' }],
+        instructions: {
+          prep: [{ step: 1, action: 'Wash chicken', description: '' }],
+          cook: [{ step: 1, action: 'Fry chicken', description: '', timer_mins: 15 }]
+        },
+        reference_links: [],
+        attributes: {}
+      })
+    )
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.resolve({ ok: true, json: async () => ({ ...mockRecipe, cover_image_url: null, id: 1 }) } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
+    })
+
+    expect(screen.getByAltText('Preview')).toBeInTheDocument()
+
+    const restoreBtn = await screen.findByRole('button', { name: /Restore/i })
+    fireEvent.click(restoreBtn)
+
+    // Preview is cleared and PUT payload explicitly sends cover_image_url: null
+    expect(screen.queryByAltText('Preview')).not.toBeInTheDocument()
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      const putCall = vi.mocked(fetch).mock.calls.find((call) =>
+        call[0].toString().includes('/recipes/1') && call[1]?.method === 'PUT'
+      )
+      expect(putCall).toBeDefined()
+      const payload = JSON.parse(putCall![1]!.body as string)
+      expect(payload).toHaveProperty('cover_image_url', null)
+    })
+  })
+
+  it('prevents delayed FileReader onloadend from resurrecting a removed image preview', async () => {
+    vi.mocked(fetch).mockImplementation((url) => {
+      if (url.toString().includes('/recipes/1')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    let capturedReader: { onloadend: (() => void) | null; result: string; readAsDataURL: ReturnType<typeof vi.fn> } | null = null
+    const OriginalFileReader = window.FileReader
+    class ControlledFileReader {
+      onloadend: (() => void) | null = null
+      result = 'data:image/png;base64,STALE'
+      readAsDataURL = vi.fn(() => {
+        capturedReader = this
+      })
+    }
+    vi.stubGlobal('FileReader', ControlledFileReader)
+
+    try {
+      renderEditRecipe()
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
+      })
+
+      const fileInput = screen.getByLabelText(/Upload recipe image/i) as HTMLInputElement
+      const file = new File(['image-bytes'], 'photo.png', { type: 'image/png' })
+      fireEvent.change(fileInput, { target: { files: [file] } })
+
+      expect(capturedReader).not.toBeNull()
+
+      // User clicks Remove before FileReader finishes reading
+      const removeImageBtn = screen.getByRole('button', { name: /^Remove$/i })
+      fireEvent.click(removeImageBtn)
+      expect(screen.queryByAltText('Preview')).not.toBeInTheDocument()
+
+      // Now the stale FileReader finishes
+      act(() => {
+        capturedReader!.onloadend?.()
+      })
+
+      // Preview must remain absent
+      expect(screen.queryByAltText('Preview')).not.toBeInTheDocument()
+    } finally {
+      vi.stubGlobal('FileReader', OriginalFileReader)
+    }
+  })
+
+  it('restores cover_image_url and preview when restoring a draft that has an image URL', async () => {
+    localStorage.setItem(
+      'recipe_draft',
+      JSON.stringify({
+        title: 'Draft With Cover Image URL',
+        protein_ids: [1],
+        meal_type_ids: [1],
+        servings: 4,
+        prep_time_mins: 10,
+        cook_time_mins: 20,
+        ingredients: [{ item: 'Chicken', amount: '500g' }],
+        instructions: {
+          prep: [{ step: 1, action: 'Wash chicken', description: '' }],
+          cook: [{ step: 1, action: 'Fry chicken', description: '', timer_mins: 15 }]
+        },
+        reference_links: [],
+        attributes: {},
+        cover_image_url: '/uploads/draft-image.jpg'
+      })
+    )
+
+    const recipeWithoutImage = { ...mockRecipe, cover_image_url: null }
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => recipeWithoutImage } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.resolve({ ok: true, json: async () => ({ ...mockRecipe, cover_image_url: '/uploads/draft-image.jpg', id: 1 }) } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
+    })
+
+    expect(screen.queryByAltText('Preview')).not.toBeInTheDocument()
+
+    const restoreBtn = await screen.findByRole('button', { name: /Restore/i })
+    fireEvent.click(restoreBtn)
+
+    const previewImg = screen.getByAltText('Preview') as HTMLImageElement
+    expect(previewImg).toBeInTheDocument()
+    expect(previewImg.src).toContain('/uploads/draft-image.jpg')
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      const putCall = vi.mocked(fetch).mock.calls.find((call) =>
+        call[0].toString().includes('/recipes/1') && call[1]?.method === 'PUT'
+      )
+      expect(putCall).toBeDefined()
+      const payload = JSON.parse(putCall![1]!.body as string)
+      expect(payload).toHaveProperty('cover_image_url', '/uploads/draft-image.jpg')
     })
   })
 })

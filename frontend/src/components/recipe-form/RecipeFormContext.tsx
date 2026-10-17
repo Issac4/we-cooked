@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import type { DropResult } from '@hello-pangea/dnd'
 import { apiFetch } from '@/lib/api'
 import type { RecipeCreate, Ingredient, InstructionStep, Protein, MealType, ReferenceLink } from '@/types/api'
@@ -94,6 +94,7 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
   const [showAddMealType, setShowAddMealType] = useState(false)
   const [newMealTypeName, setNewMealTypeName] = useState('')
   const [hasDraft, setHasDraft] = useState(false)
+  const fileReadIdRef = useRef(0)
   const apiUrl = CONFIG.API_URL
 
   // Form State
@@ -240,10 +241,13 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      const readId = ++fileReadIdRef.current
       setImageFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
-        setImagePreview(reader.result as string)
+        if (fileReadIdRef.current === readId) {
+          setImagePreview(reader.result as string)
+        }
       }
       reader.readAsDataURL(file)
       e.target.value = ''
@@ -251,6 +255,7 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
   }, [])
 
   const removeImage = useCallback(() => {
+    fileReadIdRef.current++
     setImageFile(null)
     setImagePreview(null)
     setFormData(prev => ({ ...prev, cover_image_url: null }))
@@ -457,11 +462,16 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
   const restoreDraft = useCallback(() => {
     const draft = localStorage.getItem('recipe_draft')
     if (draft) {
+      fileReadIdRef.current++
       const parsedDraft: RecipeCreate = JSON.parse(draft)
+      const normalizedCoverImageUrl = parsedDraft.cover_image_url ?? null
       setEditingValues({})
-      setFormData(parsedDraft)
+      setFormData({
+        ...parsedDraft,
+        cover_image_url: normalizedCoverImageUrl
+      })
       setImageFile(null)
-      setImagePreview(parsedDraft.cover_image_url || null)
+      setImagePreview(normalizedCoverImageUrl)
       localStorage.removeItem('recipe_draft')
       setHasDraft(false)
     }
