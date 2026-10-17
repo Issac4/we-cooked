@@ -147,7 +147,12 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
       const nativeData = (e.nativeEvent as InputEvent | undefined)?.data
       const isIncompletePrefix =
         value === '' &&
-        (nativeData === '-' || nativeData === '.' || inputEl.validity?.badInput === true)
+        (nativeData === '-' ||
+          nativeData === '+' ||
+          nativeData === '.' ||
+          nativeData === 'e' ||
+          nativeData === 'E' ||
+          inputEl.validity?.badInput === true)
 
       if (isIncompletePrefix) {
         setEditingValues(prev => ({ ...prev, [name]: '' }))
@@ -159,13 +164,16 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
       }
 
       const valStr = value.trim().replace(/^0+(?=\d)/, '')
+      const isNumericSyntax = /^[+-]?\d*(?:\.\d*)?(?:[eE][+-]?\d*)?$/.test(valStr)
       const parsed = Math.round(parseFloat(valStr))
-      const nextVal = valStr === '' || !Number.isFinite(parsed) || parsed <= 0 ? 0 : Math.min(parsed, 9999)
-      const isInProgressDecimal =
-        /^\d*\.\d*$/.test(valStr) && Number.isFinite(parsed) && parsed >= 0 && parsed <= 9999
-      const isInProgressNegative = /^-\d*(?:\.\d*)?$/.test(valStr)
+      const nextVal =
+        valStr === '' || !isNumericSyntax || Number.isNaN(parsed) || parsed <= 0
+          ? 0
+          : Math.min(parsed, 9999)
+      const isInProgressNonInteger =
+        valStr !== '' && isNumericSyntax && /[.eE+-]/.test(valStr)
 
-      if (isInProgressDecimal || isInProgressNegative) {
+      if (isInProgressNonInteger) {
         if (inputEl.value !== valStr) {
           inputEl.value = valStr
         }

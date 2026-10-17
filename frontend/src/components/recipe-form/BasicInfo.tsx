@@ -43,6 +43,7 @@ export const BasicInfo = () => {
             onBlur={handleInputBlur}
             onKeyDown={handleNumericKeyDown}
             min="1"
+            max="9999"
           />
         </div>
         <div className="space-y-2">
@@ -60,6 +61,7 @@ export const BasicInfo = () => {
             onBlur={handleInputBlur}
             onKeyDown={handleNumericKeyDown}
             min="0"
+            max="9999"
           />
         </div>
         <div className="space-y-2">
@@ -77,6 +79,7 @@ export const BasicInfo = () => {
             onBlur={handleInputBlur}
             onKeyDown={handleNumericKeyDown}
             min="0"
+            max="9999"
           />
         </div>
       </div>
