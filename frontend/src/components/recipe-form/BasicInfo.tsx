@@ -4,7 +4,13 @@ import { Label } from '@/components/ui/label'
 import { useRecipeForm } from './RecipeFormContext'
 
 export const BasicInfo = () => {
-  const { formData, handleInputChange } = useRecipeForm()
+  const { formData, editingValues, handleInputChange, handleInputBlur } = useRecipeForm()
+
+  const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleInputBlur(e as unknown as React.FocusEvent<HTMLInputElement>)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -30,9 +36,14 @@ export const BasicInfo = () => {
             id="servings" 
             name="servings" 
             type="number" 
-            value={formData.servings}
+            step="any"
+            inputMode="numeric"
+            value={editingValues.servings ?? formData.servings}
             onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onKeyDown={handleNumericKeyDown}
             min="1"
+            max="9999"
           />
         </div>
         <div className="space-y-2">
@@ -43,9 +54,14 @@ export const BasicInfo = () => {
             id="prep_time_mins" 
             name="prep_time_mins" 
             type="number" 
-            value={formData.prep_time_mins}
+            step="any"
+            inputMode="numeric"
+            value={editingValues.prep_time_mins ?? formData.prep_time_mins}
             onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onKeyDown={handleNumericKeyDown}
             min="0"
+            max="9999"
           />
         </div>
         <div className="space-y-2">
@@ -56,9 +72,14 @@ export const BasicInfo = () => {
             id="cook_time_mins" 
             name="cook_time_mins" 
             type="number" 
-            value={formData.cook_time_mins}
+            step="any"
+            inputMode="numeric"
+            value={editingValues.cook_time_mins ?? formData.cook_time_mins}
             onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onKeyDown={handleNumericKeyDown}
             min="0"
+            max="9999"
           />
         </div>
       </div>
