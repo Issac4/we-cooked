@@ -515,6 +515,7 @@ describe('EditRecipe Page', () => {
 
   it('keeps RecipeForm mounted with user edits intact when PUT submission fails and allows retry', async () => {
     let putAttempts = 0
+    let resolveRetryPut: ((value: Response) => void) | null = null
 
     vi.mocked(fetch).mockImplementation((url, init) => {
       if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
@@ -535,10 +536,9 @@ describe('EditRecipe Page', () => {
             json: async () => ({ detail: 'Database connection error' })
           } as Response)
         }
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ ...mockRecipe, title: 'Edited Recipe Title', id: 1 })
-        } as Response)
+        return new Promise<Response>((resolve) => {
+          resolveRetryPut = resolve
+        })
       }
       return Promise.reject(new Error('Not found'))
     })
@@ -563,13 +563,21 @@ describe('EditRecipe Page', () => {
     expect(screen.getByDisplayValue('Edited Recipe Title')).toBeInTheDocument()
     expect(screen.getByDisplayValue('750g')).toBeInTheDocument()
 
-    // User can retry submission and succeed
+    // User can retry submission; stale error banner clears immediately while retry is in-flight
     const retrySaveBtn = screen.getByRole('button', { name: /Update Recipe/i })
     expect(retrySaveBtn).not.toBeDisabled()
     fireEvent.click(retrySaveBtn)
 
     await waitFor(() => {
       expect(putAttempts).toBe(2)
+      expect(screen.queryByText(/Database connection error/i)).not.toBeInTheDocument()
+    })
+
+    await act(async () => {
+      resolveRetryPut!({
+        ok: true,
+        json: async () => ({ ...mockRecipe, title: 'Edited Recipe Title', id: 1 })
+      } as Response)
     })
   })
 
