@@ -572,6 +572,48 @@ describe('EditRecipe Page', () => {
       expect(putAttempts).toBe(2)
     })
   })
+
+  it('does not re-fetch form options or overwrite the submit error when PUT fails due to a network error', async () => {
+    let initialLoaded = false
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => mockRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        if (initialLoaded) {
+          return Promise.reject(new Error('Network offline'))
+        }
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        if (initialLoaded) {
+          return Promise.reject(new Error('Network offline'))
+        }
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.reject(new Error('Network offline'))
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await screen.findByDisplayValue('Existing Recipe')
+    await screen.findByRole('button', { name: 'Chicken' })
+    initialLoaded = true
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Network offline/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByText(/Failed to load form options/i)).not.toBeInTheDocument()
+  })
 })
+
 
 

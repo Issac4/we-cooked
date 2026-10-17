@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -96,6 +96,24 @@ export default function EditRecipe() {
     }
   }
 
+  // Transform Recipe to RecipeCreate format for the form
+  const initialData = useMemo<Partial<RecipeCreate> | undefined>(() => {
+    if (!recipe) return undefined
+    return {
+      title: recipe.title,
+      protein_ids: recipe.proteins.map(name => proteins.find(p => p.name === name)?.id).filter(Boolean) as number[],
+      meal_type_ids: recipe.meal_types.map(name => mealTypes.find(mt => mt.name === name)?.id).filter(Boolean) as number[],
+      servings: recipe.servings,
+      prep_time_mins: recipe.prep_time_mins,
+      cook_time_mins: recipe.cook_time_mins,
+      ingredients: recipe.ingredients,
+      instructions: recipe.instructions,
+      reference_links: recipe.reference_links,
+      attributes: recipe.attributes,
+      cover_image_url: recipe.cover_image_url
+    }
+  }, [recipe, proteins, mealTypes])
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -117,21 +135,6 @@ export default function EditRecipe() {
         </div>
       </div>
     )
-  }
-
-  // Transform Recipe to RecipeCreate format for the form
-  const initialData: Partial<RecipeCreate> = {
-    title: recipe.title,
-    protein_ids: recipe.proteins.map(name => proteins.find(p => p.name === name)?.id).filter(Boolean) as number[],
-    meal_type_ids: recipe.meal_types.map(name => mealTypes.find(mt => mt.name === name)?.id).filter(Boolean) as number[],
-    servings: recipe.servings,
-    prep_time_mins: recipe.prep_time_mins,
-    cook_time_mins: recipe.cook_time_mins,
-    ingredients: recipe.ingredients,
-    instructions: recipe.instructions,
-    reference_links: recipe.reference_links,
-    attributes: recipe.attributes,
-    cover_image_url: recipe.cover_image_url
   }
 
   return (
