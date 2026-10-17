@@ -252,7 +252,7 @@ export const RecipeFormProvider: React.FC<RecipeFormProviderProps> = ({ children
   const removeImage = useCallback(() => {
     setImageFile(null)
     setImagePreview(null)
-    setFormData(prev => ({ ...prev, cover_image_url: undefined }))
+    setFormData(prev => ({ ...prev, cover_image_url: null }))
   }, [])
 
   const handleAddIngredient = useCallback(() => {

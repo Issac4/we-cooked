@@ -46,7 +46,7 @@ export interface RecipeCreate {
   title: string;
   protein_ids: number[];
   meal_type_ids: number[];
-  cover_image_url?: string;
+  cover_image_url?: string | null;
   prep_time_mins?: number;
   cook_time_mins?: number;
   servings: number;
@@ -61,7 +61,7 @@ export interface Recipe {
   title: string;
   proteins: string[];
   meal_types: string[];
-  cover_image_url?: string;
+  cover_image_url?: string | null;
   prep_time_mins?: number;
   cook_time_mins?: number;
   servings: number;
