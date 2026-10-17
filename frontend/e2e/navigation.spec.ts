@@ -55,11 +55,35 @@ test.describe('Navigation & Page Loading', () => {
     await expect(page).toHaveURL('http://localhost:5173/');
     await expect(page.locator('h1')).toHaveText(/My Recipes/i);
 
-    // 3. Add Recipe Page (Crucial check for SyntaxErrors in RecipeForm)
+    // 3. Add Recipe Page (Crucial check for SyntaxErrors in RecipeForm & Issue #3 numeric inputs)
     await page.goto('/add-recipe');
     await expect(page).toHaveURL(/\/add-recipe/);
     await expect(page.getByText(/Create New Recipe/i)).toBeVisible();
     await expect(page.getByText(/Basic Information/i)).toBeVisible();
+
+    const prepInput = page.getByLabel('Prep Time (mins)');
+    await expect(prepInput).toHaveValue('0');
+
+    // Default 0 overwrite on sequential typing
+    await prepInput.click();
+    await prepInput.pressSequentially('15');
+    await expect(prepInput).toHaveValue('15');
+
+    // Sequential decimal entry (1.25 -> 1, 1.49 -> 1)
+    await prepInput.selectText();
+    await prepInput.pressSequentially('1.25');
+    await prepInput.blur();
+    await expect(prepInput).toHaveValue('1');
+
+    await prepInput.selectText();
+    await prepInput.pressSequentially('1.49');
+    await prepInput.blur();
+    await expect(prepInput).toHaveValue('1');
+
+    // Sequential negative entry (-5 -> 0)
+    await prepInput.selectText();
+    await prepInput.pressSequentially('-5');
+    await expect(prepInput).toHaveValue('0');
 
     // 4. Settings Page
     await page.goto('/settings');

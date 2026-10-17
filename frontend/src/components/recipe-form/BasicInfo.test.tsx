@@ -126,12 +126,22 @@ describe('BasicInfo Numeric Time Inputs (Issue #3)', () => {
     expect(screen.getByTestId('prep-is-positive-zero').textContent).toBe('true')
   })
 
-  it('sanitizes non-numeric, negative, -0.1, and Infinity inputs safely back to +0', async () => {
+  it('sanitizes non-numeric, negative, sequential -5, -0.1, and Infinity inputs safely back to +0', async () => {
+    const user = userEvent.setup()
     await renderBasicInfo({ prep_time_mins: 20 })
 
     const prepInput = screen.getByLabelText(/Prep Time \(mins\)/i) as HTMLInputElement
 
+    // Pasted / direct negative string
     fireEvent.change(prepInput, { target: { value: '-10' } })
+    expect(prepInput.value).toBe('0')
+    expect(screen.getByTestId('prep-state').textContent).toBe('0')
+
+    // Sequential typing of '-5' after selecting field contents
+    fireEvent.change(prepInput, { target: { value: '20' } })
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('-5')
     expect(prepInput.value).toBe('0')
     expect(screen.getByTestId('prep-state').textContent).toBe('0')
 
@@ -178,7 +188,8 @@ describe('BasicInfo Numeric Time Inputs (Issue #3)', () => {
     expect(screen.getByTestId('prep-state').textContent).toBe('253')
   })
 
-  it('handles whitespace on the real input element and rounds decimal inputs to integer minutes', async () => {
+  it('handles whitespace and rounds multi-digit decimal inputs (1.25 -> 1, 1.49 -> 1, 1.5 -> 2) without corrupting keystrokes', async () => {
+    const user = userEvent.setup()
     await renderBasicInfo()
 
     const prepInput = screen.getByLabelText(/Prep Time \(mins\)/i) as HTMLInputElement
@@ -187,26 +198,47 @@ describe('BasicInfo Numeric Time Inputs (Issue #3)', () => {
     expect(prepInput.value).toBe('45')
     expect(screen.getByTestId('prep-state').textContent).toBe('45')
 
-    fireEvent.change(prepInput, { target: { value: '1.5' } })
-    expect(prepInput.value).toBe('2')
+    // Sequential typing of 1.25 -> state is 1 (not 15), and rounds input to 1 on blur
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('1.25')
+    expect(screen.getByTestId('prep-state').textContent).toBe('1')
+    fireEvent.blur(prepInput)
+    expect(prepInput.value).toBe('1')
+
+    // Sequential typing of 1.49 -> state is 1 (not 19), and rounds input to 1 on blur
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('1.49')
+    expect(screen.getByTestId('prep-state').textContent).toBe('1')
+    fireEvent.blur(prepInput)
+    expect(prepInput.value).toBe('1')
+
+    // Sequential typing of 1.5 -> state is 2, and rounds input to 2 on blur
+    prepInput.focus()
+    prepInput.select()
+    await user.keyboard('1.5')
     expect(screen.getByTestId('prep-state').textContent).toBe('2')
+    fireEvent.blur(prepInput)
+    expect(prepInput.value).toBe('2')
   })
 
-  it('caps input values at max limit 9999 and sets numeric attributes on Servings, Prep, and Cook inputs', async () => {
-    await renderBasicInfo()
+  it('caps edited input values at 9999 without setting rangeOverflow on existing values > 9999', async () => {
+    await renderBasicInfo({ prep_time_mins: 10080 })
 
     const servingsInput = screen.getByLabelText(/Servings/i) as HTMLInputElement
     const prepInput = screen.getByLabelText(/Prep Time \(mins\)/i) as HTMLInputElement
     const cookInput = screen.getByLabelText(/Cook Time \(mins\)/i) as HTMLInputElement
 
+    // Existing duration > 9999 does not trigger native rangeOverflow
+    expect(prepInput.value).toBe('10080')
+    expect(prepInput.validity.rangeOverflow).toBe(false)
+
     expect(servingsInput).toHaveAttribute('min', '1')
-    expect(servingsInput).toHaveAttribute('max', '9999')
     expect(servingsInput).toHaveAttribute('inputMode', 'numeric')
     expect(prepInput).toHaveAttribute('min', '0')
-    expect(prepInput).toHaveAttribute('max', '9999')
     expect(prepInput).toHaveAttribute('inputMode', 'numeric')
     expect(cookInput).toHaveAttribute('min', '0')
-    expect(cookInput).toHaveAttribute('max', '9999')
     expect(cookInput).toHaveAttribute('inputMode', 'numeric')
 
     fireEvent.change(prepInput, { target: { value: '25000' } })

@@ -178,4 +178,53 @@ describe('EditRecipe Page', () => {
       expect(payload.instructions.cook[0].timer_mins).toBeUndefined()
     })
   })
+
+  it('allows updating unrelated fields on an existing recipe with prep_time_mins > 9999', async () => {
+    const longPrepRecipe = {
+      ...mockRecipe,
+      prep_time_mins: 10080
+    }
+
+    vi.mocked(fetch).mockImplementation((url, init) => {
+      if (url.toString().includes('/recipes/1') && (!init?.method || init.method === 'GET')) {
+        return Promise.resolve({ ok: true, json: async () => longPrepRecipe } as Response)
+      }
+      if (url.toString().includes('/proteins/')) {
+        return Promise.resolve({ ok: true, json: async () => mockProteins } as Response)
+      }
+      if (url.toString().includes('/meal-types/')) {
+        return Promise.resolve({ ok: true, json: async () => mockMealTypes } as Response)
+      }
+      if (url.toString().includes('/recipes/1') && init?.method === 'PUT') {
+        return Promise.resolve({ ok: true, json: async () => ({ ...longPrepRecipe, title: 'Updated Title', id: 1 }) } as Response)
+      }
+      return Promise.reject(new Error('Not found'))
+    })
+
+    renderEditRecipe()
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Existing Recipe')).toBeInTheDocument()
+    })
+
+    const prepInput = screen.getByLabelText(/Prep Time \(mins\)/i) as HTMLInputElement
+    expect(prepInput.value).toBe('10080')
+    expect(prepInput.validity.rangeOverflow).toBe(false)
+
+    const titleInput = screen.getByLabelText(/Recipe Title/i)
+    fireEvent.change(titleInput, { target: { name: 'title', value: 'Updated Title', type: 'text' } })
+
+    const saveBtn = screen.getByRole('button', { name: /Update Recipe/i })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      const putCall = vi.mocked(fetch).mock.calls.find((call) =>
+        call[0].toString().includes('/recipes/1') && call[1]?.method === 'PUT'
+      )
+      expect(putCall).toBeDefined()
+      const payload = JSON.parse(putCall![1]!.body as string)
+      expect(payload.title).toBe('Updated Title')
+      expect(payload.prep_time_mins).toBe(10080)
+    })
+  })
 })
