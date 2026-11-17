@@ -1,19 +1,26 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { loadConfig } from '../config.js';
 import { openDb, type Db } from '../db/index.js';
 import { createApp } from '../app.js';
+import { seedDefaultTags } from '../routes/tags.js';
 
 export const ADMIN_PASSWORD = 'test-admin-password-1234';
 
-/** A fresh app on an in-memory database. */
+/** A fresh app on an in-memory database with its own temporary photo folder. */
 export function makeTestApp() {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wecooked-test-'));
   const config = loadConfig({
     NODE_ENV: 'test',
     WEB_DIR: '',
+    DATA_DIR: dataDir,
     MIGRATIONS_DIR: 'drizzle',
     ADMIN_PASSWORD,
     PUBLIC_URL: 'https://wecooked.test',
   });
   const db = openDb(':memory:', config.migrationsDir);
+  seedDefaultTags(db);
   const app = createApp({ config, db });
   return { app, db, config };
 }
@@ -32,12 +39,13 @@ export class Client {
   async request(method: string, path: string, body?: unknown, headers: Record<string, string> = {}) {
     const h: Record<string, string> = { host: 'wecooked.test', 'user-agent': 'Mozilla/5.0 (iPhone) Safari/605.1', ...headers };
     if (method !== 'GET') h.origin ??= this.origin;
-    if (body !== undefined) h['content-type'] = 'application/json';
+    const isForm = body instanceof FormData;
+    if (body !== undefined && !isForm) h['content-type'] = 'application/json';
     if (this.cookies.size) h.cookie = [...this.cookies].map(([k, v]) => `${k}=${v}`).join('; ');
     const res = await this.app.request(`https://wecooked.test${path}`, {
       method,
       headers: h,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
     for (const raw of res.headers.getSetCookie()) {
       const [pair] = raw.split(';');
@@ -59,8 +67,42 @@ export class Client {
 
   get = (path: string) => this.request('GET', path);
   post = (path: string, body: unknown = {}) => this.request('POST', path, body);
+  put = (path: string, body: unknown) => this.request('PUT', path, body);
   patch = (path: string, body: unknown) => this.request('PATCH', path, body);
   del = (path: string) => this.request('DELETE', path);
+
+  upload(path: string, data: Uint8Array, filename = 'photo.jpg', type = 'image/jpeg') {
+    const form = new FormData();
+    form.set('file', new File([new Uint8Array(data)], filename, { type }));
+    return this.request('POST', path, form);
+  }
+}
+
+/** A minimal valid recipe body. */
+export function recipeBody(overrides: Record<string, unknown> = {}) {
+  return {
+    title: 'Soy Sauce Chicken',
+    otherName: '豉油雞',
+    servings: 4,
+    prepMins: 10,
+    cookMins: 35,
+    ingredients: [
+      {
+        name: '',
+        items: [
+          { quantity: 1, unit: 'whole', name: 'chicken', note: 'about 1.4 kg' },
+          { quantity: 250, unit: 'ml', name: 'light soy sauce', note: '' },
+        ],
+      },
+    ],
+    steps: [
+      { section: 'preparation', title: 'Prepare', text: 'Pat the chicken dry.', timerMins: null },
+      { section: 'cooking', title: 'Simmer', text: 'Simmer on low heat.', timerMins: 15 },
+    ],
+    links: [],
+    tagIds: [],
+    ...overrides,
+  };
 }
 
 /** Unlocks /admin, creates an invite and joins with it. Returns the signed-in client. */

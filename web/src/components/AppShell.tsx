@@ -1,9 +1,10 @@
 import { NavLink, Outlet, Link } from 'react-router';
-import { BookOpen, CalendarDays, House, LayoutGrid, Plus, UserRound } from 'lucide-react';
+import { BookOpen, CalendarDays, House, LayoutGrid, Plus, Trash2, UserRound } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { ME_KEY, useMe } from '../lib/session';
 import { Logo, formatDate } from './ui';
+import { SidebarFilters } from './Filters';
 
 const navItem = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 no-underline ${
@@ -13,7 +14,7 @@ const navItem = ({ isActive }: { isActive: boolean }) =>
 function Sidebar() {
   const { me } = useMe();
   return (
-    <aside className="hidden w-[260px] shrink-0 flex-col gap-7 border-r border-line bg-sidebar px-5 py-6 md:flex">
+    <aside className="hidden w-[260px] shrink-0 flex-col gap-7 overflow-y-auto border-r border-line bg-sidebar px-5 py-6 md:sticky md:top-0 md:flex md:h-screen">
       <Link to="/" className="flex items-center gap-2.5 text-ink no-underline">
         <Logo />
         <span className="text-lg font-bold tracking-tight">We Cooked</span>
@@ -35,9 +36,15 @@ function Sidebar() {
         )}
       </nav>
 
-      {/* Collections and filter pills arrive with the recipes milestone. */}
+      {/* Collections arrive with their milestone. */}
+      <SidebarFilters />
 
-      <div className="mt-auto border-t border-line pt-4">
+      <div className="mt-auto flex flex-col gap-2 border-t border-line pt-4">
+        {me && (
+          <NavLink to="/trash" className={({ isActive }) => `flex items-center gap-2 px-1 text-[13px] no-underline ${isActive ? 'font-semibold text-accent-ink' : 'text-muted hover:text-ink'}`}>
+            <Trash2 size={14} aria-hidden="true" /> Trash
+          </NavLink>
+        )}
         {me ? (
           <NavLink to="/me" className="flex items-center gap-2.5 rounded-[10px] px-1 py-1.5 text-ink no-underline hover:bg-line/60">
             <Avatar name={me.username} />
@@ -74,7 +81,7 @@ function BottomTabs() {
             <CalendarDays size={22} aria-hidden="true" /> Plan
           </NavLink>
           <Link
-            to="/"
+            to="/recipes/new"
             aria-label="New recipe"
             className="-mt-[18px] flex size-[52px] items-center justify-center rounded-full bg-accent text-white shadow-[0_6px_16px_rgba(47,107,79,0.35)]"
           >

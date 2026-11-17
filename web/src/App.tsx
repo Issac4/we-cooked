@@ -4,25 +4,29 @@ import { RequireMember } from './components/RequireMember';
 import { AdminPage } from './pages/AdminPage';
 import { JoinPage, LoginPage, ResetPage } from './pages/AuthPages';
 import { MePage } from './pages/MePage';
-import { CollectionsPage, NotFound, PlanPage, RecipesHome, SettingsPage } from './pages/Placeholders';
+import { CollectionsPage, NotFound, PlanPage } from './pages/Placeholders';
+import { RecipePage } from './pages/RecipePage';
+import { RecipesPage } from './pages/RecipesPage';
+import { EditRecipePage, NewRecipePage } from './pages/recipe-form/RecipeFormPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { TrashPage } from './pages/TrashPage';
+
+const members = (what: string, element: React.ReactNode) => <RequireMember what={what}>{element}</RequireMember>;
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppShell />,
     children: [
-      { index: true, element: <RecipesHome /> },
+      { index: true, element: <RecipesPage /> },
+      { path: 'recipes/new', element: members('Adding recipes', <NewRecipePage />) },
+      { path: 'recipes/:id', element: <RecipePage /> },
+      { path: 'recipes/:id/edit', element: members('Editing recipes', <EditRecipePage />) },
       { path: 'plan', element: <PlanPage /> },
-      { path: 'settings', element: <SettingsPage /> },
+      { path: 'settings', element: members('Household settings', <SettingsPage />) },
+      { path: 'trash', element: members('The Trash', <TrashPage />) },
       { path: 'collections', element: <CollectionsPage /> },
-      {
-        path: 'me',
-        element: (
-          <RequireMember what="Your account page">
-            <MePage />
-          </RequireMember>
-        ),
-      },
+      { path: 'me', element: members('Your account page', <MePage />) },
       { path: '*', element: <NotFound /> },
     ],
   },

@@ -38,9 +38,25 @@ async function call<T>(method: string, path: string, body?: unknown, schema?: z.
 export const api = {
   get: <T>(path: string, schema?: z.ZodType<T>) => call<T>('GET', path, undefined, schema),
   post: <T>(path: string, body: unknown = {}, schema?: z.ZodType<T>) => call<T>('POST', path, body, schema),
+  put: <T>(path: string, body: unknown, schema?: z.ZodType<T>) => call<T>('PUT', path, body, schema),
   patch: <T>(path: string, body: unknown, schema?: z.ZodType<T>) => call<T>('PATCH', path, body, schema),
   del: <T>(path: string, schema?: z.ZodType<T>) => call<T>('DELETE', path, undefined, schema),
 };
+
+/** Uploads one photo (multipart) and returns its upload id. */
+export async function uploadPhoto(file: File): Promise<{ id: string }> {
+  const form = new FormData();
+  form.set('file', file);
+  let res: Response;
+  try {
+    res = await fetch('/api/uploads', { method: 'POST', body: form });
+  } catch {
+    throw new ApiError(0, 'Cannot reach the server. Check your connection and try again.');
+  }
+  const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
+  if (!res.ok || !data.id) throw new ApiError(res.status, data.error ?? `Upload failed (${res.status})`);
+  return { id: data.id };
+}
 
 /** Field message for a form input, from a failed mutation. */
 export function fieldError(error: unknown, field: string): string | undefined {

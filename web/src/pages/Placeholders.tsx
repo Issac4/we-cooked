@@ -1,4 +1,3 @@
-import { useMe } from '../lib/session';
 import { RequireMember } from '../components/RequireMember';
 
 function Soon({ title, text }: { title: string; text: string }) {
@@ -10,28 +9,10 @@ function Soon({ title, text }: { title: string; text: string }) {
   );
 }
 
-export function RecipesHome() {
-  const { me } = useMe();
-  return (
-    <Soon
-      title="All recipes"
-      text={me ? `Welcome, ${me.username}. Recipes arrive in the next milestone.` : 'Recipes arrive in the next milestone. You are browsing as a guest.'}
-    />
-  );
-}
-
 export function PlanPage() {
   return (
     <RequireMember what="The meal plan">
       <Soon title="Meal plan" text="Coming in a later milestone." />
-    </RequireMember>
-  );
-}
-
-export function SettingsPage() {
-  return (
-    <RequireMember what="Household settings">
-      <Soon title="Household settings" text="Week start, holiday calendars, filter groups and AI rules arrive with their features." />
     </RequireMember>
   );
 }

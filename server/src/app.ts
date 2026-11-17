@@ -11,6 +11,9 @@ import { errorResponse, HttpError, loadSession, sameOrigin } from './http.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
+import { linkPreviewRoutes, recipeRoutes, trashRoutes } from './routes/recipes.js';
+import { tagRoutes } from './routes/tags.js';
+import { servePhotos, uploadRoutes } from './routes/uploads.js';
 
 export interface AppDeps {
   config: Config;
@@ -45,11 +48,17 @@ export function createApp({ config, db }: AppDeps) {
   api.route('/auth', authRoutes());
   api.route('/me', meRoutes());
   api.route('/admin', adminRoutes());
+  api.route('/tags', tagRoutes());
+  api.route('/recipes', recipeRoutes());
+  api.route('/trash', trashRoutes());
+  api.route('/uploads', uploadRoutes());
+  api.route('/link-preview', linkPreviewRoutes());
 
   // Must stay last: anything under /api that no route matched.
   api.all('*', (c) => c.json({ error: 'Not found' }, 404));
 
   app.route('/api', api);
+  app.route('/uploads', servePhotos(config.dataDir));
 
   // Built web app: real files first, then index.html for any other page so the
   // client-side router can handle it.

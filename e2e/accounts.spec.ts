@@ -1,36 +1,10 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
-import { ADMIN_PASSWORD } from '../playwright.config';
+import { expect, test, type Page } from '@playwright/test';
+import { createInviteLink, join as joinMember, shot, unlockAdmin } from './helpers';
 
-const shots = process.env.E2E_SCREENSHOTS;
-async function shot(page: Page, name: string) {
-  if (shots) await page.screenshot({ path: `${shots}/${name}.png`, fullPage: true });
-}
-
-async function unlockAdmin(page: Page) {
-  await page.goto('/admin');
-  await page.getByLabel('Admin password').fill(ADMIN_PASSWORD);
-  await page.getByRole('button', { name: 'Unlock' }).click();
-  await expect(page.getByRole('heading', { name: 'Members' })).toBeVisible();
-}
-
-async function createInviteLink(page: Page): Promise<string> {
-  const code = page.getByRole('status').filter({ hasText: 'New invite link' }).locator('code');
-  const before = (await code.count()) ? await code.textContent() : null;
-  await page.getByRole('button', { name: 'Create invite link' }).click();
-  // Wait for the new link, not the one shown from a previous click.
-  await expect(code).not.toHaveText(before ?? '');
-  return (await code.textContent())!.trim();
-}
-
-async function join(browser: Browser, link: string, username: string, password: string) {
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  await page.goto(link);
-  await page.getByLabel('Username').fill(username);
-  await page.getByLabel('Password', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Join' }).click();
-  await expect(page.getByText(`Welcome, ${username}`)).toBeVisible();
-  return { context, page };
+async function join(browser: Parameters<typeof joinMember>[0], link: string, username: string, password: string) {
+  const joined = await joinMember(browser, link, username, password);
+  await expect(joined.page.getByRole('link', { name: new RegExp(username) }).first()).toBeVisible();
+  return joined;
 }
 
 test.describe.serial('household accounts', () => {
@@ -72,7 +46,7 @@ test.describe.serial('household accounts', () => {
   test('guests see recipes but not the meal plan', async ({ browser }) => {
     const guest = await (await browser.newContext()).newPage();
     await guest.goto('/');
-    await expect(guest.getByRole('link', { name: 'Sign in' })).toBeVisible();
+    await expect(guest.getByRole('link', { name: 'Sign in' }).first()).toBeVisible();
     await expect(guest.getByRole('link', { name: 'Meal plan' })).toHaveCount(0);
     await guest.goto('/plan');
     await expect(guest.getByText('The meal plan is for household members')).toBeVisible();
@@ -91,7 +65,7 @@ test.describe.serial('household accounts', () => {
     await laptop.getByLabel('Username').fill('dad');
     await laptop.getByLabel('Password', { exact: true }).fill('correct-horse-1');
     await laptop.getByRole('button', { name: 'Sign in' }).click();
-    await expect(laptop.getByText('Welcome, Dad')).toBeVisible();
+    await expect(laptop.getByRole('heading', { name: 'All recipes' })).toBeVisible();
 
     await issac.reload();
     // The laptop shows up as a second device that can be signed out from here.
@@ -120,7 +94,7 @@ test.describe.serial('household accounts', () => {
 
     // Sam's old device was signed out.
     await second.page.reload();
-    await expect(second.page.getByRole('link', { name: 'Sign in' })).toBeVisible();
+    await expect(second.page.getByRole('link', { name: 'Sign in' }).first()).toBeVisible();
 
     await adminPage.reload();
     await expect(adminPage.getByText('Sam set a new password with a reset link')).toBeVisible();

@@ -74,6 +74,27 @@
   }
 }
 
+/* Rendered markdown in steps and descriptions. */
+.wc-markdown > * + * {
+  margin-top: 0.5em;
+}
+.wc-markdown p,
+.wc-markdown ul,
+.wc-markdown ol {
+  margin-bottom: 0;
+}
+.wc-markdown ul {
+  list-style: disc;
+  padding-left: 1.25em;
+}
+.wc-markdown ol {
+  list-style: decimal;
+  padding-left: 1.25em;
+}
+.wc-markdown strong {
+  font-weight: 600;
+}
+
 /* In the base layer so Tailwind utility classes (text-ink, text-white, ...) win. */
 @layer base {
   a {

@@ -4,6 +4,9 @@ import { loadConfig } from './config.js';
 import { openDb } from './db/index.js';
 import { createApp } from './app.js';
 import { purgeExpiredSessions } from './auth/sessions.js';
+import { purgeTrash } from './recipes/service.js';
+import { seedDefaultTags } from './routes/tags.js';
+import { cleanOrphanUploads } from './routes/uploads.js';
 
 let config: ReturnType<typeof loadConfig>;
 try {
@@ -14,11 +17,21 @@ try {
 }
 
 const db = openDb(path.join(config.dataDir, 'wecooked.db'), config.migrationsDir);
+seedDefaultTags(db);
 const app = createApp({ config, db });
 
-// Housekeeping: drop sessions nobody used for a year.
-purgeExpiredSessions(db);
-setInterval(() => purgeExpiredSessions(db), 60 * 60 * 1000).unref();
+/** Hourly housekeeping: old sessions, 30-day-old Trash, photos no recipe uses. */
+async function housekeeping() {
+  try {
+    purgeExpiredSessions(db);
+    purgeTrash(db);
+    await cleanOrphanUploads(db, config.dataDir);
+  } catch (err) {
+    console.error('Housekeeping failed:', err);
+  }
+}
+void housekeeping();
+setInterval(() => void housekeeping(), 60 * 60 * 1000).unref();
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`We Cooked ${config.version} listening on http://localhost:${info.port}`);
