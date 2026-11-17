@@ -6,6 +6,7 @@ import { DeviceSession, MeResponse } from '@wecooked/shared';
 import { api, fieldError, formError } from '../lib/api';
 import { useLogout, useMe, useSetMe } from '../lib/session';
 import { Alert, Button, Card, TextField, relativeDay } from '../components/ui';
+import { ApiKeysCard } from './me/ApiKeysCard';
 
 function UsernameCard() {
   const { me } = useMe();
@@ -134,10 +135,7 @@ export function MePage() {
       <UsernameCard />
       <PasswordCard />
       <DevicesCard />
-      <Card>
-        <h2 className="text-lg font-bold">API keys for AI agents</h2>
-        <p className="text-muted">Coming in a later milestone: keys for Claude, Codex or Gemini to read and add recipes.</p>
-      </Card>
+      <ApiKeysCard />
     </div>
   );
 }

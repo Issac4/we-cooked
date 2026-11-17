@@ -5,13 +5,13 @@ import { hashPassword, verifyPassword } from '../auth/crypto.js';
 import { signOutAllDevices } from '../auth/sessions.js';
 import { sessions, users } from '../db/schema.js';
 import type { AppEnv } from '../env.js';
-import { HttpError, parseBody, requireMember } from '../http.js';
+import { HttpError, humanOnly, parseBody } from '../http.js';
 import { toMe } from './auth.js';
 
 /** The signed-in member managing their own account. */
 export function meRoutes() {
   const app = new Hono<AppEnv>();
-  app.use(requireMember);
+  app.use(humanOnly);
 
   app.patch('/', async (c) => {
     const { username } = await parseBody(c, UpdateMe);

@@ -20,7 +20,8 @@ const DAY = 24 * 60 * 60 * 1000;
 /** Who is making a change: a member, or (later) an AI agent using a member's API key. */
 export interface Actor {
   userId: number;
-  viaApiKey?: boolean;
+  /** Set when an AI agent made the change with this member's API key. */
+  apiKeyName?: string;
 }
 
 export interface ListOptions {
@@ -28,6 +29,8 @@ export interface ListOptions {
   tagIds?: number[];
   sort?: RecipeSort;
   recipeIds?: number[];
+  /** Only recipes an AI agent added or changed that nobody has checked yet. */
+  needsReview?: boolean;
 }
 
 function likePattern(q: string): string {
@@ -62,6 +65,7 @@ const cardColumns = {
   prepMins: recipes.prepMins,
   cookMins: recipes.cookMins,
   needsReview: recipes.needsReview,
+  aiKeyName: recipes.aiKeyName,
   createdAt: recipes.createdAt,
   updatedAt: recipes.updatedAt,
 };
@@ -82,6 +86,7 @@ export function listRecipes(db: Db, opts: ListOptions = {}): RecipeList {
       sql`${recipes.id} in (select ${recipeTags.recipeId} from ${recipeTags} where ${inArray(recipeTags.tagId, tagIds)} group by ${recipeTags.recipeId} having count(*) = ${tagIds.length})`,
     );
   }
+  if (opts.needsReview) where.push(eq(recipes.needsReview, true));
   if (opts.recipeIds) where.push(opts.recipeIds.length ? inArray(recipes.id, opts.recipeIds) : sql`0`);
 
   const order =
@@ -169,7 +174,8 @@ export function createRecipe(db: Db, input: RecipeInput, actor: Actor): Recipe {
       .insert(recipes)
       .values({
         ...values(input),
-        needsReview: !!actor.viaApiKey,
+        needsReview: !!actor.apiKeyName,
+        aiKeyName: actor.apiKeyName ?? null,
         createdBy: actor.userId,
         createdAt: now,
         updatedBy: actor.userId,
@@ -187,7 +193,7 @@ export function updateRecipe(db: Db, id: number, input: RecipeInput, actor: Acto
   const tagIds = checkReferences(db, input);
   db.transaction((tx) => {
     const current = tx
-      .select({ updatedAt: recipes.updatedAt, deletedAt: recipes.deletedAt, needsReview: recipes.needsReview })
+      .select({ updatedAt: recipes.updatedAt, deletedAt: recipes.deletedAt, needsReview: recipes.needsReview, aiKeyName: recipes.aiKeyName })
       .from(recipes)
       .where(eq(recipes.id, id))
       .get();
@@ -201,7 +207,8 @@ export function updateRecipe(db: Db, id: number, input: RecipeInput, actor: Acto
     tx.update(recipes)
       .set({
         ...values(input),
-        needsReview: actor.viaApiKey ? true : current.needsReview,
+        needsReview: actor.apiKeyName ? true : current.needsReview,
+        aiKeyName: actor.apiKeyName ?? current.aiKeyName,
         updatedBy: actor.userId,
         // Strictly increasing, so two saves in the same millisecond still conflict.
         updatedAt: Math.max(Date.now(), current.updatedAt + 1),
@@ -217,7 +224,7 @@ export function updateRecipe(db: Db, id: number, input: RecipeInput, actor: Acto
 export function markReviewed(db: Db, id: number): void {
   const changed = db
     .update(recipes)
-    .set({ needsReview: false })
+    .set({ needsReview: false, aiKeyName: null })
     .where(and(eq(recipes.id, id), isNull(recipes.deletedAt)))
     .run().changes;
   if (!changed) throw new HttpError(404, 'Recipe not found');

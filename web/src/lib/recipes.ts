@@ -42,6 +42,7 @@ export function useRecipeFilters() {
   );
   const q = params.get('q') ?? '';
   const collection = Number(params.get('collection') ?? 0) || null;
+  const review = params.get('review') === '1';
   const sortParam = params.get('sort') ?? 'new';
   const sort: RecipeSort = (RECIPE_SORTS as readonly string[]).includes(sortParam) ? (sortParam as RecipeSort) : 'new';
 
@@ -69,7 +70,9 @@ export function useRecipeFilters() {
     q,
     sort,
     collection,
-    hasFilters: tags.length > 0 || q.trim().length > 0,
+    review,
+    hasFilters: tags.length > 0 || q.trim().length > 0 || review,
+    setReview: (on: boolean) => update((p) => p.set('review', on ? '1' : '')),
     toggleTag,
     setQuery: (value: string) => update((p) => p.set('q', value)),
     setSort: (value: RecipeSort) => update((p) => p.set('sort', value === 'new' ? '' : value)),
@@ -78,6 +81,7 @@ export function useRecipeFilters() {
       update((p) => {
         p.delete('tags');
         p.delete('q');
+        p.delete('review');
       }),
     /** Opens a collection (or All recipes with null), keeping pills and search. */
     setCollection: (id: number | null) => update((p) => p.set('collection', id ? String(id) : ''), true),
@@ -90,8 +94,8 @@ export function useAllRecipes(enabled = true) {
 }
 
 export function useRecipeList() {
-  const { tags, q, sort, collection } = useRecipeFilters();
-  const params = { tags: tags.join(','), q: q.trim(), sort, collection: collection ? String(collection) : '' };
+  const { tags, q, sort, collection, review } = useRecipeFilters();
+  const params = { tags: tags.join(','), q: q.trim(), sort, collection: collection ? String(collection) : '', review: review ? '1' : '' };
   return useQuery({
     queryKey: recipesKey(params),
     queryFn: () => {

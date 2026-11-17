@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@hono/node-server": "2.1.8",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@node-rs/argon2": "2.2.2",
     "@wecooked/shared": "*",
     "better-sqlite3": "13.2.0",

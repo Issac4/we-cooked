@@ -10,7 +10,7 @@ import {
 import type { Db } from '../db/index.js';
 import { settings } from '../db/schema.js';
 import type { AppEnv } from '../env.js';
-import { HttpError, parseBody, requireMember } from '../http.js';
+import { HttpError, humanOnly, parseBody, requireMember } from '../http.js';
 
 const KEY = 'household';
 
@@ -89,7 +89,7 @@ export function settingsRoutes() {
 
   app.get('/', (c) => c.json(getSettings(c.var.db)));
 
-  app.patch('/', async (c) => {
+  app.patch('/', humanOnly, async (c) => {
     const patch = await parseBody(c, HouseholdSettings.partial());
     const next = { ...getSettings(c.var.db), ...patch };
     const unknown = next.holidayCalendars.filter((code) => !isKnownCalendar(code));

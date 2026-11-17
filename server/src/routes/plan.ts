@@ -19,7 +19,7 @@ import {
 import type { Db } from '../db/index.js';
 import { planEntries, planEvents, planRows, recipes, settings } from '../db/schema.js';
 import type { AppEnv } from '../env.js';
-import { HttpError, parseBody, requireMember } from '../http.js';
+import { HttpError, humanOnly, parseBody, requireMember } from '../http.js';
 import { getSettings, holidaysBetween } from './settings.js';
 
 const MAX_RANGE_DAYS = 62;
@@ -244,7 +244,7 @@ export function planRoutes() {
     return c.json({ ok: true });
   });
 
-  app.delete('/rows/:id{[0-9]+}', (c) => {
+  app.delete('/rows/:id{[0-9]+}', humanOnly, (c) => {
     const db = c.var.db;
     if (db.select({ n: sql<number>`count(*)` }).from(planRows).get()!.n <= 1) throw new HttpError(400, 'Keep at least one row');
     const removed = db.delete(planRows).where(eq(planRows.id, Number(c.req.param('id')))).run().changes;

@@ -4,6 +4,7 @@ import type { z } from 'zod';
 import type { ApiError } from '@wecooked/shared';
 import type { AppEnv } from './env.js';
 import { readSession } from './auth/sessions.js';
+import { readApiKey } from './auth/api-keys.js';
 
 export class HttpError extends Error {
   constructor(
@@ -51,16 +52,41 @@ export function clientIp(c: Context): string {
   }
 }
 
-/** Puts the signed-in member (or null for guests) on the context. */
+/**
+ * Puts the signed-in member (or null for guests) on the context. An
+ * "Authorization: Bearer wc_…" header signs the request in as the key's owner.
+ */
 export const loadSession: MiddlewareHandler<AppEnv> = async (c, next) => {
-  const found = readSession(c);
-  c.set('user', found?.user ?? null);
-  c.set('session', found?.session ?? null);
+  const auth = c.req.header('authorization');
+  if (auth) {
+    const found = readApiKey(c.var.db, auth);
+    if (!found) throw new HttpError(401, 'That API key is not valid (it may have been revoked)');
+    c.set('user', found.user);
+    c.set('apiKey', found.apiKey);
+    c.set('session', null);
+  } else {
+    const found = readSession(c);
+    c.set('user', found?.user ?? null);
+    c.set('session', found?.session ?? null);
+    c.set('apiKey', null);
+  }
   await next();
 };
 
-/** Blocks guests. Every route that changes data uses this (or the API-key variant later). */
+/** Blocks guests, and read-only API keys on anything that changes data. */
 export const requireMember: MiddlewareHandler<AppEnv> = async (c, next) => {
+  if (!c.var.user) throw new HttpError(401, 'Please sign in first');
+  const writing = !['GET', 'HEAD', 'OPTIONS'].includes(c.req.method);
+  if (writing && c.var.apiKey?.scope === 'read') throw new HttpError(403, 'This API key is read-only');
+  await next();
+};
+
+/**
+ * Only a person in a browser, never an API key: account and key management,
+ * household settings, and anything that deletes recipes or collections.
+ */
+export const humanOnly: MiddlewareHandler<AppEnv> = async (c, next) => {
+  if (c.var.apiKey) throw new HttpError(403, 'API keys cannot do this. Sign in on the website instead.');
   if (!c.var.user) throw new HttpError(401, 'Please sign in first');
   await next();
 };

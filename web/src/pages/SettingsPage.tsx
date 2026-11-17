@@ -6,6 +6,7 @@ import { api, formError } from '../lib/api';
 import { tagsKey, useTagGroups } from '../lib/recipes';
 import { Alert, Button, Card } from '../components/ui';
 import { PlanSettings } from './settings/PlanSettings';
+import { AiRulesCard } from './settings/AiRulesCard';
 
 /** Small inline "name" editor used for groups and tags. */
 function InlineName({ initial, label, onSave, onCancel, busy }: { initial: string; label: string; onSave: (name: string) => void; onCancel: () => void; busy: boolean }) {
@@ -153,6 +154,7 @@ export function SettingsPage() {
         <NewGroup />
       </Card>
       <PlanSettings />
+      <AiRulesCard />
     </div>
   );
 }

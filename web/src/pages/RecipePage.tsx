@@ -213,7 +213,7 @@ export function RecipePage() {
         <div className="flex flex-[1_1_420px] flex-col gap-4">
           {r.needsReview && (
             <div className="flex flex-wrap items-center gap-3 rounded-xl bg-warn-soft px-3.5 py-2.5 text-warn-ink">
-              <span>Added by AI · needs review</span>
+              <span>Added by AI{r.aiKeyName ? ` (key “${r.aiKeyName}”)` : ''} · needs review. Check it, then confirm.</span>
               {me && (
                 <Button size="sm" variant="secondary" busy={reviewed.isPending} onClick={() => reviewed.mutate()}>
                   Looks good

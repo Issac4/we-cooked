@@ -109,3 +109,28 @@ export const ApiError = z.object({
   fields: z.record(z.string(), z.string()).optional(),
 });
 export type ApiError = z.infer<typeof ApiError>;
+
+// ---- API keys (AI agents) ----
+
+export const API_KEY_SCOPES = ['read', 'write'] as const;
+export const ApiKeyScope = z.enum(API_KEY_SCOPES);
+export type ApiKeyScope = z.infer<typeof ApiKeyScope>;
+
+export const ApiKeyCreate = z.object({
+  name: z.string().trim().min(1, 'Name the key, e.g. “Claude on laptop”').max(60),
+  scope: ApiKeyScope.default('write'),
+});
+
+export const ApiKey = z.object({
+  id: z.number(),
+  name: z.string(),
+  prefix: z.string(),
+  scope: ApiKeyScope,
+  createdAt: z.number(),
+  lastUsedAt: z.number().nullable(),
+});
+export type ApiKey = z.infer<typeof ApiKey>;
+
+/** Returned once, when the key is created. */
+export const ApiKeyCreated = ApiKey.extend({ key: z.string() });
+export type ApiKeyCreated = z.infer<typeof ApiKeyCreated>;

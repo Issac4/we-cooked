@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { RecipeList } from '@wecooked/shared';
 import { Link } from 'react-router';
 import { ChevronDown, ChevronLeft, Plus, Search, X } from 'lucide-react';
 import type { Collection, RecipeCard, RecipeSort } from '@wecooked/shared';
@@ -8,7 +10,7 @@ import { AddRecipesDialog, CollectionFormDialog, DeleteCollectionButton } from '
 import { useCollectionHref } from '../components/SidebarCollections';
 import { formatMinutes, useRecipeFilters, useRecipeList } from '../lib/recipes';
 import { useMe } from '../lib/session';
-import { formError } from '../lib/api';
+import { api, formError } from '../lib/api';
 import { RecipePhoto } from '../components/RecipePhoto';
 import { ActiveFilterChips, FilterSheet, FiltersButton } from '../components/Filters';
 import { Alert, Button } from '../components/ui';
@@ -118,6 +120,24 @@ function Card({ recipe, removeFrom }: { recipe: RecipeCard; removeFrom?: Collect
   );
 }
 
+/** "3 recipes added by AI need a look" with a toggle to show only those. */
+function ReviewBanner() {
+  const filters = useRecipeFilters();
+  const pending = useQuery({ queryKey: ['recipes', { review: '1', count: true }], queryFn: () => api.get('/recipes?review=1', RecipeList) });
+  const n = pending.data?.total ?? 0;
+  if (!n && !filters.review) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-warn-soft px-4 py-3 text-warn-ink">
+      <span>
+        {n ? `${n} ${n === 1 ? 'recipe' : 'recipes'} added or changed by an AI agent ${n === 1 ? 'needs' : 'need'} a quick check.` : 'Nothing left to review.'}
+      </span>
+      <Button size="sm" variant="secondary" onClick={() => filters.setReview(!filters.review)}>
+        {filters.review ? 'Show all recipes' : 'Show them'}
+      </Button>
+    </div>
+  );
+}
+
 function CollectionHeader({ collection, onAdd }: { collection: Collection; onAdd: () => void }) {
   const { me } = useMe();
   const [editing, setEditing] = useState(false);
@@ -219,6 +239,8 @@ export function RecipesPage() {
         {filters.tags.length > 0 && <span className="hidden text-[13px] text-muted md:inline">Filtered by</span>}
         <ActiveFilterChips />
       </div>
+
+      {me && <ReviewBanner />}
 
       {list.isError && !missing && <Alert>{formError(list.error)}</Alert>}
 

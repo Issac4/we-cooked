@@ -11,7 +11,7 @@ import {
 import type { Db } from '../db/index.js';
 import { collections, recipeCollections, recipes } from '../db/schema.js';
 import type { AppEnv } from '../env.js';
-import { HttpError, parseBody, requireMember } from '../http.js';
+import { HttpError, humanOnly, parseBody, requireMember } from '../http.js';
 
 export function listCollections(db: Db): Collection[] {
   return db
@@ -119,7 +119,7 @@ export function collectionRoutes() {
   });
 
   /** Deletes the collection only; its recipes stay. */
-  app.delete('/:id{[0-9]+}', requireMember, (c) => {
+  app.delete('/:id{[0-9]+}', humanOnly, (c) => {
     const removed = c.var.db.delete(collections).where(eq(collections.id, Number(c.req.param('id')))).run().changes;
     if (!removed) throw new HttpError(404, 'Collection not found');
     return c.json({ ok: true });

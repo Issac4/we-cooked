@@ -124,6 +124,8 @@ export const RecipeCard = z.object({
   cookMins: z.number().nullable(),
   tags: z.array(Tag),
   needsReview: z.boolean(),
+  /** API key name of the last AI change, while it still needs review. */
+  aiKeyName: z.string().nullable(),
   createdAt: z.number(),
   updatedAt: z.number(),
 });

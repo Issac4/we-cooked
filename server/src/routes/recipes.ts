@@ -1,7 +1,7 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { RECIPE_SORTS, RecipeInput, RecipeUpdate, type LinkPreview, type RecipeSort } from '@wecooked/shared';
 import type { AppEnv } from '../env.js';
-import { HttpError, parseBody, requireMember } from '../http.js';
+import { HttpError, humanOnly, parseBody, requireMember } from '../http.js';
 import { recipeIdsIn } from './collections.js';
 import {
   createRecipe,
@@ -13,6 +13,11 @@ import {
   trashRecipe,
   updateRecipe,
 } from '../recipes/service.js';
+
+/** Who is acting: the member, plus the API key name when an AI agent made the call. */
+function actorOf(c: Context<AppEnv>) {
+  return { userId: c.var.user!.id, apiKeyName: c.var.apiKey?.name };
+}
 
 function idParam(value: string): number {
   const id = Number(value);
@@ -38,7 +43,7 @@ export function recipeRoutes() {
       if (!ids) throw new HttpError(404, 'Collection not found');
       recipeIds = ids;
     }
-    return c.json(listRecipes(c.var.db, { q: c.req.query('q'), tagIds, sort, recipeIds }));
+    return c.json(listRecipes(c.var.db, { q: c.req.query('q'), tagIds, sort, recipeIds, needsReview: c.req.query('review') === '1' }));
   });
 
   app.get('/:id{[0-9]+}', (c) => {
@@ -50,21 +55,21 @@ export function recipeRoutes() {
   // Members only from here.
   app.post('/', requireMember, async (c) => {
     const input = await parseBody(c, RecipeInput);
-    return c.json(createRecipe(c.var.db, input, { userId: c.var.user!.id }), 201);
+    return c.json(createRecipe(c.var.db, input, actorOf(c)), 201);
   });
 
   app.put('/:id{[0-9]+}', requireMember, async (c) => {
     const { baseUpdatedAt, ...input } = await parseBody(c, RecipeUpdate);
-    const recipe = updateRecipe(c.var.db, idParam(c.req.param('id')), input, { userId: c.var.user!.id }, baseUpdatedAt);
+    const recipe = updateRecipe(c.var.db, idParam(c.req.param('id')), input, actorOf(c), baseUpdatedAt);
     return c.json(recipe);
   });
 
-  app.post('/:id{[0-9]+}/reviewed', requireMember, (c) => {
+  app.post('/:id{[0-9]+}/reviewed', humanOnly, (c) => {
     markReviewed(c.var.db, idParam(c.req.param('id')));
     return c.json({ ok: true });
   });
 
-  app.delete('/:id{[0-9]+}', requireMember, (c) => {
+  app.delete('/:id{[0-9]+}', humanOnly, (c) => {
     trashRecipe(c.var.db, idParam(c.req.param('id')), { userId: c.var.user!.id });
     return c.json({ ok: true });
   });
@@ -74,7 +79,7 @@ export function recipeRoutes() {
 
 export function trashRoutes() {
   const app = new Hono<AppEnv>();
-  app.use(requireMember);
+  app.use(humanOnly);
   app.get('/', (c) => c.json(listTrash(c.var.db)));
   app.post('/:id{[0-9]+}/restore', (c) => {
     restoreRecipe(c.var.db, idParam(c.req.param('id')));

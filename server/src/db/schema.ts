@@ -103,6 +103,8 @@ export const recipes = sqliteTable(
     links: text('links', { mode: 'json' }).$type<SourceLink[]>().notNull(),
     /** Set when an AI agent created or edited it, until a member marks it reviewed. */
     needsReview: integer('needs_review', { mode: 'boolean' }).notNull().default(false),
+    /** Name of the API key used for the last AI change, shown with the review badge. */
+    aiKeyName: text('ai_key_name'),
     createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: integer('created_at').notNull(),
     updatedBy: integer('updated_by').references(() => users.id, { onDelete: 'set null' }),
@@ -224,6 +226,23 @@ export const planEvents = sqliteTable(
   },
   (t) => [index('plan_events_range_idx').on(t.fromDate, t.toDate)],
 );
+
+// ---------- API keys (for AI agents via MCP and the REST API) ----------
+
+export const apiKeys = sqliteTable('api_keys', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  /** First characters of the key, so people can tell keys apart. */
+  prefix: text('prefix').notNull(),
+  keyHash: text('key_hash').notNull().unique(),
+  /** 'read' or 'write'. */
+  scope: text('scope').notNull(),
+  createdAt: integer('created_at').notNull(),
+  lastUsedAt: integer('last_used_at'),
+});
 
 /** What happened on /admin and with invites, newest first in the UI. */
 export const adminLog = sqliteTable('admin_log', {

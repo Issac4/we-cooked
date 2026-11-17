@@ -4,7 +4,7 @@ import { RenameInput, TagGroupInput, TagInput, usernameKey as nameKey, type TagG
 import type { Db } from '../db/index.js';
 import { settings, tagGroups, tags } from '../db/schema.js';
 import type { AppEnv } from '../env.js';
-import { HttpError, parseBody, requireMember } from '../http.js';
+import { HttpError, humanOnly, parseBody, requireMember } from '../http.js';
 
 const DEFAULT_GROUPS: Array<[string, string[]]> = [
   ['Protein', ['Chicken', 'Pork', 'Beef', 'Fish', 'Seafood', 'Egg', 'Tofu', 'Vegetarian']],
@@ -64,7 +64,7 @@ export function tagRoutes() {
     return c.json({ ok: true });
   });
 
-  app.delete('/groups/:id', requireMember, (c) => {
+  app.delete('/groups/:id', humanOnly, (c) => {
     const removed = c.var.db.delete(tagGroups).where(eq(tagGroups.id, Number(c.req.param('id')))).run().changes;
     if (!removed) throw new HttpError(404, 'Group not found');
     return c.json({ ok: true });
@@ -103,7 +103,7 @@ export function tagRoutes() {
     return c.json({ ok: true });
   });
 
-  app.delete('/:id', requireMember, (c) => {
+  app.delete('/:id', humanOnly, (c) => {
     const removed = c.var.db.delete(tags).where(eq(tags.id, Number(c.req.param('id')))).run().changes;
     if (!removed) throw new HttpError(404, 'Tag not found');
     return c.json({ ok: true });

@@ -8,11 +8,15 @@ import type { Config } from './config.js';
 import type { Db } from './db/index.js';
 import type { AppEnv } from './env.js';
 import { errorResponse, HttpError, loadSession, sameOrigin } from './http.js';
+import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
+import { readApiKey } from './auth/api-keys.js';
+import { buildMcpServer } from './mcp/server.js';
 import { adminRoutes } from './routes/admin.js';
 import { collectionRoutes } from './routes/collections.js';
 import { commentRoutes, recipeCommentRoutes } from './routes/comments.js';
 import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
+import { keyRoutes } from './routes/keys.js';
 import { planRoutes } from './routes/plan.js';
 import { settingsRoutes } from './routes/settings.js';
 import { linkPreviewRoutes, recipeRoutes, trashRoutes } from './routes/recipes.js';
@@ -50,6 +54,7 @@ export function createApp({ config, db }: AppDeps) {
   });
 
   api.route('/auth', authRoutes());
+  api.route('/me/keys', keyRoutes());
   api.route('/me', meRoutes());
   api.route('/admin', adminRoutes());
   api.route('/tags', tagRoutes());
@@ -67,6 +72,22 @@ export function createApp({ config, db }: AppDeps) {
   api.all('*', (c) => c.json({ error: 'Not found' }, 404));
 
   app.route('/api', api);
+
+  // MCP for AI agents: one stateless server per request, signed in by API key.
+  app.all('/mcp', async (c) => {
+    const found = readApiKey(db, c.req.header('authorization'));
+    if (!found) {
+      return c.json({ error: 'Missing or invalid API key. Create one on your Me page in We Cooked.' }, 401, { 'WWW-Authenticate': 'Bearer' });
+    }
+    const server = buildMcpServer({ db, user: found.user, apiKey: found.apiKey, publicUrl: config.publicUrl });
+    const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+    await server.connect(transport);
+    try {
+      return await transport.handleRequest(c.req.raw);
+    } finally {
+      await server.close();
+    }
+  });
   app.route('/uploads', servePhotos(config.dataDir));
 
   // Built web app: real files first, then index.html for any other page so the
