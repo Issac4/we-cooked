@@ -164,6 +164,24 @@ export const recipeCollections = sqliteTable(
   (t) => [primaryKey({ columns: [t.recipeId, t.collectionId] }), index('recipe_collections_collection_idx').on(t.collectionId, t.recipeId)],
 );
 
+// ---------- Comments ----------
+
+/** "Notes from the kitchen" on a recipe. Only the author can edit or delete one. */
+export const comments = sqliteTable(
+  'comments',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    recipeId: integer('recipe_id')
+      .notNull()
+      .references(() => recipes.id, { onDelete: 'cascade' }),
+    authorId: integer('author_id').references(() => users.id, { onDelete: 'set null' }),
+    body: text('body').notNull(),
+    createdAt: integer('created_at').notNull(),
+    editedAt: integer('edited_at'),
+  },
+  (t) => [index('comments_recipe_idx').on(t.recipeId, t.createdAt)],
+);
+
 /** What happened on /admin and with invites, newest first in the UI. */
 export const adminLog = sqliteTable('admin_log', {
   id: integer('id').primaryKey({ autoIncrement: true }),

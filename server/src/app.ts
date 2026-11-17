@@ -10,6 +10,7 @@ import type { AppEnv } from './env.js';
 import { errorResponse, HttpError, loadSession, sameOrigin } from './http.js';
 import { adminRoutes } from './routes/admin.js';
 import { collectionRoutes } from './routes/collections.js';
+import { commentRoutes, recipeCommentRoutes } from './routes/comments.js';
 import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
 import { linkPreviewRoutes, recipeRoutes, trashRoutes } from './routes/recipes.js';
@@ -50,7 +51,9 @@ export function createApp({ config, db }: AppDeps) {
   api.route('/me', meRoutes());
   api.route('/admin', adminRoutes());
   api.route('/tags', tagRoutes());
+  api.route('/recipes/:id{[0-9]+}/comments', recipeCommentRoutes());
   api.route('/recipes', recipeRoutes());
+  api.route('/comments', commentRoutes());
   api.route('/trash', trashRoutes());
   api.route('/collections', collectionRoutes());
   api.route('/uploads', uploadRoutes());

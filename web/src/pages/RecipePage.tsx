@@ -10,6 +10,7 @@ import { useMe } from '../lib/session';
 import { Markdown } from '../components/Markdown';
 import { RecipePhoto } from '../components/RecipePhoto';
 import { RecipeCollections } from '../components/RecipeCollections';
+import { RecipeNotes } from '../components/RecipeNotes';
 import { Alert, Button, formatDate } from '../components/ui';
 
 function Ingredients({ recipe }: { recipe: Recipe }) {
@@ -280,6 +281,8 @@ export function RecipePage() {
         <Ingredients recipe={r} />
         <Steps steps={r.steps} />
       </section>
+
+      <RecipeNotes recipeId={r.id} />
     </article>
   );
 }
