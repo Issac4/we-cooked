@@ -5,7 +5,7 @@ Our household recipe book and meal plan. Self-hosted, one Docker container.
 - **Recipes**: name plus optional second name (e.g. Chinese), photo, ingredients in sections that scale with servings, steps split into Preparation and Cooking with timers, source links.
 - **Pill filters** by group (Protein, Meal, Cuisine…; editable): any pill within a group, all groups together (Beef or Chicken, and Dinner). Search across names and ingredients.
 - **Collections**: themed sets such as "Weeknight" or "CNY".
-- **Notes from the kitchen** on every recipe (brands that worked, tweaks).
+- **Notes from the kitchen** on every recipe (brands that worked, tweaks), with an optional 1–5 star rating. A recipe’s score counts each member’s latest rating once; sort by **Highest rated**.
 - **Meal plan**: week grid with your own rows, text or linked recipes, add to several days at once, repeat, drag to move (Alt-drag to copy), copy last week, "away" events, red weekends and public holidays, cooking-history dots on each recipe.
 - **Everyone in the household is equal.** People are managed on `/admin` with one shared password.
 - **Guests** (anyone with the link) can read recipes, collections and notes. Only members can change anything or see the meal plan.

@@ -165,6 +165,9 @@ describe('MCP', () => {
     const { call } = await connect(app, await newKey(member));
 
     expect((await call('add_comment', { recipeId: recipe.id, body: 'Try less sugar.' })).json.author).toBe('Issac');
+    expect((await call('add_comment', { recipeId: recipe.id, body: 'Loved it', rating: 5 })).json).toMatchObject({ rating: 5 });
+    expect((await call('add_comment', { recipeId: recipe.id })).text).toMatch(/note, a rating, or both/);
+    expect((await call('get_recipe', { id: recipe.id })).json.rating).toMatchObject({ average: 5, count: 1 });
     expect((await call('add_to_collection', { collectionId: col.id, recipeIds: [recipe.id] })).json.added).toBe(1);
     expect((await call('add_plan_entry', { dates: ['2026-11-18'], row: 'dinner', recipeId: recipe.id })).json.added).toBe(1);
     expect((await call('add_plan_entry', { dates: ['2026-11-18'], row: 'Supper', text: 'x' })).text).toMatch(/Rows: Breakfast, Lunch, Dinner/);

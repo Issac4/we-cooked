@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CollectionRef } from './collections.js';
+import { RatingSummary } from './comments.js';
 
 // ---------- Quantities ----------
 
@@ -168,6 +169,8 @@ export const RecipeCard = z.object({
   needsReview: z.boolean(),
   /** API key name of the last AI change, while it still needs review. */
   aiKeyName: z.string().nullable(),
+  /** Household rating (one vote per member, their latest); null until someone rates it. */
+  rating: RatingSummary.nullable(),
   createdAt: z.number(),
   updatedAt: z.number(),
 });
@@ -203,7 +206,7 @@ export type Upload = z.infer<typeof Upload>;
 export const LinkPreview = z.object({ title: z.string() });
 export type LinkPreview = z.infer<typeof LinkPreview>;
 
-export const RECIPE_SORTS = ['new', 'title', 'time', 'updated'] as const;
+export const RECIPE_SORTS = ['new', 'title', 'time', 'updated', 'rating'] as const;
 export type RecipeSort = (typeof RECIPE_SORTS)[number];
 
 /** Image URLs for an upload id. */

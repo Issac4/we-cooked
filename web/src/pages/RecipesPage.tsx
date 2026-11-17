@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { RecipeList } from '@wecooked/shared';
 import { Link } from 'react-router';
-import { ChevronDown, ChevronLeft, Plus, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, Plus, Search, Star, X } from 'lucide-react';
 import type { Collection, RecipeCard, RecipeSort } from '@wecooked/shared';
 import { colorHex, useCollections, useMembership } from '../lib/collections';
 import { AddRecipesDialog, CollectionFormDialog, DeleteCollectionButton } from '../components/CollectionDialogs';
@@ -20,6 +20,7 @@ const SORT_LABELS: Record<RecipeSort, string> = {
   updated: 'Recently edited',
   title: 'A → Z',
   time: 'Quickest first',
+  rating: 'Highest rated',
 };
 
 function SearchBox() {
@@ -96,8 +97,14 @@ function Card({ recipe, removeFrom }: { recipe: RecipeCard; removeFrom?: Collect
             <div className="text-base leading-[22px] font-semibold">{recipe.title}</div>
             {recipe.otherName && <div className="text-[13px] text-muted">{recipe.otherName}</div>}
           </div>
-          {(time || recipe.servings) && (
-            <div className="flex gap-3 text-[13px] text-ink-2">
+          {(time || recipe.servings || recipe.rating) && (
+            <div className="flex flex-wrap gap-x-3 text-[13px] text-ink-2">
+              {recipe.rating && (
+                <span className="inline-flex items-center gap-1" aria-label={`Rated ${recipe.rating.average} out of 5 by ${recipe.rating.count}`}>
+                  <Star size={13} className="text-star" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+                  <span aria-hidden="true">{recipe.rating.average.toFixed(1)}</span>
+                </span>
+              )}
               {time && <span>{time}</span>}
               {recipe.servings && <span>Serves {recipe.servings}</span>}
             </div>

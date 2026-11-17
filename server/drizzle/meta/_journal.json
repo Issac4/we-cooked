@@ -43,6 +43,13 @@
       "when": 1794897223450,
       "tag": "0005_api_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794957010029,
+      "tag": "0006_ratings",
+      "breakpoints": true
     }
   ]
 }
