@@ -11,7 +11,8 @@ export default defineConfig({
   testDir: 'e2e',
   fullyParallel: false,
   workers: 1,
-  reporter: [['list']],
+  // On CI, failures also become annotations on the GitHub run.
+  reporter: process.env.CI ? [['list'], ['github']] : [['list']],
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',
