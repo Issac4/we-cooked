@@ -4,7 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-accent text-white hover:brightness-110',
+  primary: 'bg-accent text-on-accent hover:brightness-110',
   secondary: 'border border-line-strong bg-surface text-ink hover:bg-sidebar',
   ghost: 'text-ink-2 hover:bg-sidebar',
   danger: 'border border-line-strong bg-surface text-danger hover:bg-sidebar',
@@ -103,7 +103,7 @@ export function Alert({ tone = 'error', children }: { tone?: 'error' | 'success'
 export function Logo({ size = 36 }: { size?: number }) {
   return (
     <span
-      className="flex items-center justify-center rounded-[10px] bg-accent text-white"
+      className="flex items-center justify-center rounded-[10px] bg-accent text-on-accent"
       style={{ width: size, height: size }}
     >
       <svg width={size * 0.56} height={size * 0.56} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

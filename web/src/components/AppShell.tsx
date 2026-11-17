@@ -84,7 +84,7 @@ function BottomTabs() {
           <Link
             to="/recipes/new"
             aria-label="New recipe"
-            className="-mt-[18px] flex size-[52px] items-center justify-center rounded-full bg-accent text-white shadow-[0_6px_16px_rgba(47,107,79,0.35)]"
+            className="-mt-[18px] flex size-[52px] items-center justify-center rounded-full bg-accent text-on-accent shadow-[0_6px_16px_rgba(47,107,79,0.35)]"
           >
             <Plus size={22} aria-hidden="true" />
           </Link>

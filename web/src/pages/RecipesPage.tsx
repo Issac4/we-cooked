@@ -215,7 +215,7 @@ export function RecipesPage() {
           <SearchBox />
           <SortMenu />
           {me && !collection && (
-            <Link to="/recipes/new" className="hidden h-11 items-center gap-2 rounded-xl bg-accent px-[18px] font-semibold text-white no-underline hover:text-white md:flex">
+            <Link to="/recipes/new" className="hidden h-11 items-center gap-2 rounded-xl bg-accent px-[18px] font-semibold text-on-accent no-underline hover:text-on-accent md:flex">
               <Plus size={16} aria-hidden="true" /> New recipe
             </Link>
           )}
@@ -272,7 +272,7 @@ export function RecipesPage() {
               <p className="text-base font-semibold">No recipes yet</p>
               <p className="text-muted">{me ? 'Add the first one, or ask an AI agent to add some for you.' : 'Nothing has been added yet.'}</p>
               {me && (
-                <Link to="/recipes/new" className="flex h-11 items-center rounded-xl bg-accent px-[18px] font-semibold text-white no-underline hover:text-white">
+                <Link to="/recipes/new" className="flex h-11 items-center rounded-xl bg-accent px-[18px] font-semibold text-on-accent no-underline hover:text-on-accent">
                   Add a recipe
                 </Link>
               )}

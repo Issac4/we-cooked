@@ -283,7 +283,7 @@ function DayList({ view, days, actions, onEditEvent }: { view: PlanView; days: D
       <div className="grid grid-cols-7 gap-1">
         {days.map((d) => {
           const red = d.weekend || holidays.has(d.iso);
-          const look = d.iso === today ? 'bg-accent text-white' : awayEvent(d.iso) ? `${AWAY_BG} border border-dashed border-muted` : 'border border-line bg-surface';
+          const look = d.iso === today ? 'bg-accent text-on-accent' : awayEvent(d.iso) ? `${AWAY_BG} border border-dashed border-muted` : 'border border-line bg-surface';
           return (
             <a key={d.iso} href={`#day-${d.iso}`} className={`flex flex-col items-center rounded-[10px] py-1.5 leading-4 no-underline ${look} ${red && d.iso !== today ? 'text-holiday' : d.iso === today ? '' : 'text-ink-2'}`}>
               <span className="text-[11px]">{d.dow}</span>

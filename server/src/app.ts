@@ -11,6 +11,8 @@ import { errorResponse, HttpError, loadSession, sameOrigin } from './http.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { readApiKey } from './auth/api-keys.js';
 import { buildMcpServer } from './mcp/server.js';
+import { getRecipe } from './recipes/service.js';
+import { withRecipePreview } from './share-preview.js';
 import { adminRoutes } from './routes/admin.js';
 import { collectionRoutes } from './routes/collections.js';
 import { commentRoutes, recipeCommentRoutes } from './routes/comments.js';
@@ -109,7 +111,10 @@ export function createApp({ config, db }: AppDeps) {
     app.get('*', (c, next) => {
       if (/^\/(api|mcp|uploads)(\/|$)/.test(c.req.path)) return next();
       c.header('Cache-Control', 'no-cache');
-      return c.html(indexHtml);
+      // Shared recipe links get a proper preview card.
+      const match = c.req.path.match(/^\/recipes\/(\d+)\/?$/);
+      const recipe = match ? getRecipe(db, Number(match[1])) : null;
+      return c.html(recipe ? withRecipePreview(indexHtml, recipe, config.publicUrl) : indexHtml);
     });
   }
 

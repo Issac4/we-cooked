@@ -78,7 +78,7 @@ export function AddToPlanButton({ recipeId, title }: { recipeId: number; title: 
                   })
                 }
                 className={`flex size-[54px] cursor-pointer flex-col items-center justify-center rounded-xl border leading-4 ${
-                  on ? 'border-accent bg-accent text-white' : `border-line-strong bg-surface ${red ? 'text-holiday' : 'text-ink-2'} ${away(d.iso) ? 'opacity-50' : ''}`
+                  on ? 'border-accent bg-accent text-on-accent' : `border-line-strong bg-surface ${red ? 'text-holiday' : 'text-ink-2'} ${away(d.iso) ? 'opacity-50' : ''}`
                 }`}
               >
                 <span className="text-xs">{d.dow}</span>

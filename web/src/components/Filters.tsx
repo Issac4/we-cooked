@@ -9,7 +9,7 @@ export function Pill({ active, children, onClick, large = false }: { active: boo
       aria-pressed={active}
       onClick={onClick}
       className={`cursor-pointer rounded-full border font-medium transition ${large ? 'h-10 px-3.5 text-sm' : 'px-[13px] py-[7px] text-[13px] leading-[18px]'} ${
-        active ? 'border-accent bg-accent text-white' : 'border-line-strong bg-surface text-ink-2 hover:border-muted'
+        active ? 'border-accent bg-accent text-on-accent' : 'border-line-strong bg-surface text-ink-2 hover:border-muted'
       }`}
     >
       {children}
@@ -101,7 +101,7 @@ export function FilterSheet({ open, onClose, resultLabel }: { open: boolean; onC
           </button>
         </div>
         <FilterGroups large />
-        <button type="button" onClick={onClose} className="h-12 cursor-pointer rounded-xl bg-accent font-semibold text-white">
+        <button type="button" onClick={onClose} className="h-12 cursor-pointer rounded-xl bg-accent font-semibold text-on-accent">
           Show {resultLabel}
         </button>
       </div>

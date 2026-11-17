@@ -46,6 +46,26 @@ describe('server skeleton', () => {
   });
 });
 
+describe('share previews', () => {
+  it('adds title and Open Graph tags to recipe pages, escaped', async () => {
+    const { createMember, makeTestApp: make, recipeBody } = await import('./test/helpers.js');
+    const t = make();
+    // makeTestApp has no web build; give it one for this test.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wecooked-web-'));
+    fs.writeFileSync(path.join(dir, 'index.html'), '<!doctype html><html><head><title>We Cooked</title></head><body></body></html>');
+    const app2 = createApp({ config: { ...t.config, webDir: dir }, db: t.db });
+    const { member } = await createMember(app2, 'Issac');
+    const { id } = (await member.post('/api/recipes', recipeBody({ title: 'Mum\'s <Best> Chicken', otherName: '豉油雞' }))).json;
+    const html = await (await app2.request(`/recipes/${id}`)).text();
+    expect(html).toContain('<meta property="og:title" content="Mum&#39;s &lt;Best&gt; Chicken · 豉油雞" />');
+    expect(html).toContain('<title>Mum&#39;s &lt;Best&gt; Chicken · 豉油雞 · We Cooked</title>');
+    expect(html).toContain('45 min · serves 4');
+    expect(html).not.toContain('<Best>');
+    const other = await (await app2.request('/recipes/99999')).text();
+    expect(other).toContain('<title>We Cooked</title>');
+  });
+});
+
 describe('config', () => {
   it('refuses a short admin password in production', () => {
     expect(() => loadConfig({ NODE_ENV: 'production', ADMIN_PASSWORD: 'short' })).toThrow(/ADMIN_PASSWORD/);

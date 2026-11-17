@@ -19,6 +19,7 @@
   --color-line-strong: var(--wc-line-strong);
   --color-accent: var(--wc-accent);
   --color-accent-ink: var(--wc-accent-ink);
+  --color-on-accent: var(--wc-on-accent);
   --color-accent-soft: var(--wc-accent-soft);
   --color-holiday: var(--wc-holiday);
   --color-danger: var(--wc-danger);
@@ -38,6 +39,7 @@
   --wc-line-strong: #dcd5c7;
   --wc-accent: #2f6b4f;
   --wc-accent-ink: #234f3b;
+  --wc-on-accent: #ffffff;
   --wc-accent-soft: #e3ece6;
   --wc-holiday: #b42318;
   --wc-danger: #9b2c2c;
@@ -58,6 +60,7 @@
     --wc-line-strong: #4a443b;
     --wc-accent: #5fae86;
     --wc-accent-ink: #9fd5b8;
+    --wc-on-accent: #0f2219;
     --wc-accent-soft: #23362c;
     --wc-holiday: #f2867b;
     --wc-danger: #f0a0a0;
@@ -71,6 +74,13 @@
   body {
     background: var(--wc-page);
     color: var(--wc-ink);
+  }
+}
+
+/* Photo placeholders are pastel; tone them down on a dark page. */
+@media (prefers-color-scheme: dark) {
+  .wc-placeholder {
+    filter: brightness(0.42) saturate(0.9);
   }
 }
 

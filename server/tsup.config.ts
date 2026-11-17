@@ -4,7 +4,7 @@ import { defineConfig } from 'tsup';
 // npm dependencies (including native ones like better-sqlite3) stay external
 // and are installed in the image.
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/index.ts', 'src/cli.ts'],
   format: ['esm'],
   platform: 'node',
   target: 'node24',

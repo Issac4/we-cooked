@@ -30,7 +30,7 @@ export function RecipePhoto({
     return <img src={photoUrl(photo, size)} alt="" loading="lazy" className={`object-cover ${className}`} />;
   }
   return (
-    <div className={`flex items-center justify-center text-[#8A7F6E] ${className}`} style={{ background: tintFor(id) }}>
+    <div className={`wc-placeholder flex items-center justify-center text-[#8A7F6E] ${className}`} style={{ background: tintFor(id) }}>
       <PotIcon size={iconSize} />
     </div>
   );

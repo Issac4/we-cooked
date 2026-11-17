@@ -12,7 +12,7 @@ function DayChip({ day, on, home, note, onClick, red }: { day: DayInfo; on: bool
   const look = home
     ? 'border-accent-soft bg-accent-soft text-accent-ink cursor-default'
     : on
-      ? 'border-accent bg-accent text-white'
+      ? 'border-accent bg-accent text-on-accent'
       : `border-line-strong bg-surface ${red ? 'text-holiday' : 'text-ink-2'}`;
   return (
     <button
@@ -200,7 +200,7 @@ export function RepeatDialog({ entry, onClose, weekStart, rows }: { entry: PlanE
                 })
               }
               className={`h-10 cursor-pointer rounded-lg text-sm ${
-                isEntry ? 'bg-accent-soft font-semibold text-accent-ink' : on ? 'bg-accent font-semibold text-white' : inMonth ? `hover:bg-sidebar ${d.weekend ? 'text-holiday' : ''}` : 'text-muted/60 hover:bg-sidebar'
+                isEntry ? 'bg-accent-soft font-semibold text-accent-ink' : on ? 'bg-accent font-semibold text-on-accent' : inMonth ? `hover:bg-sidebar ${d.weekend ? 'text-holiday' : ''}` : 'text-muted/60 hover:bg-sidebar'
               }`}
             >
               {d.day}
