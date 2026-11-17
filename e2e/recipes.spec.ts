@@ -48,7 +48,8 @@ test.describe.serial('recipes', () => {
     const stepTexts = cook.getByLabel('What to do');
     await stepTexts.nth(0).fill('Pat the chicken dry.');
     await stepTexts.nth(1).fill('Simmer on **low** heat.');
-    await cook.getByPlaceholder('min').nth(1).fill('15');
+    await cook.getByPlaceholder('e.g. 15 or 0:30').nth(0).fill('0:30');
+    await cook.getByPlaceholder('e.g. 15 or 0:30').nth(1).fill('15');
 
     await cook.getByRole('button', { name: 'Add link' }).click();
     await cook.getByLabel('Link', { exact: true }).fill('https://example.com/soy-chicken');
@@ -65,6 +66,7 @@ test.describe.serial('recipes', () => {
     await expect(cook.getByRole('heading', { name: 'Cooking', exact: true })).toBeVisible();
     await expect(cook.locator('strong', { hasText: 'low' })).toBeVisible();
     await expect(cook.getByRole('button', { name: 'Start 15 min timer' })).toBeVisible();
+    await expect(cook.getByRole('button', { name: 'Start 30 s timer' })).toBeVisible();
     await expect(cook.getByText('½ cup')).toBeVisible();
 
     // Doubling servings doubles the amounts.

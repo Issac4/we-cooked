@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
+import { formatTimerInput, parseTimer, timerLabel } from '@wecooked/shared';
 import { cleanOrphanUploads } from './uploads.js';
 import { purgeTrash } from '../recipes/service.js';
 import { Client, createMember, makeTestApp, recipeBody } from '../test/helpers.js';
@@ -233,6 +234,40 @@ describe('tag order', () => {
     const ids = (await member.get('/api/tags')).json.flatMap((g: any) => g.tags).filter((t: any) => ['Pork', 'Beef', 'Hakka'].includes(t.name)).map((t: any) => t.id);
     const { id } = (await member.post('/api/recipes', recipeBody({ tagIds: ids }))).json;
     expect((await member.get(`/api/recipes/${id}`)).json.tags.map((t: any) => t.name)).toEqual(['Beef', 'Pork', 'Hakka']);
+  });
+});
+
+describe('step timers', () => {
+  it('reads what people type', () => {
+    expect(parseTimer('15')).toBe(15);
+    expect(parseTimer('1.5')).toBe(1.5);
+    expect(parseTimer('1:30')).toBe(1.5);
+    expect(parseTimer('0:30')).toBe(0.5);
+    expect(parseTimer('45s')).toBe(0.75);
+    expect(parseTimer('90 sec')).toBe(1.5);
+    expect(parseTimer('2 min')).toBe(2);
+    expect(parseTimer('')).toBeNull();
+    expect(parseTimer('0')).toBe('bad');
+    expect(parseTimer('1:75')).toBe('bad');
+    expect(parseTimer('soon')).toBe('bad');
+    expect(formatTimerInput(0.5)).toBe('0:30');
+    expect(formatTimerInput(15)).toBe('15');
+    expect(timerLabel(0.5)).toBe('30 s');
+    expect(timerLabel(1.5)).toBe('1:30');
+    expect(timerLabel(20)).toBe('20 min');
+  });
+
+  it('accepts timers in whole seconds and keeps whole minutes as before', async () => {
+    const { app } = makeTestApp();
+    const { member } = await createMember(app, 'Issac');
+    const steps = (timerMins: number | null) => [{ section: 'cooking', title: '', text: 'Rest.', timerMins }];
+    const half = await member.post('/api/recipes', recipeBody({ steps: steps(0.5) }));
+    expect(half.status).toBe(201);
+    expect(half.json.steps[0].timerMins).toBe(0.5);
+    expect((await member.post('/api/recipes', recipeBody({ steps: steps(15) }))).json.steps[0].timerMins).toBe(15);
+    const odd = await member.post('/api/recipes', recipeBody({ steps: steps(0.51) }));
+    expect(odd.status).toBe(400);
+    expect(odd.json.fields['steps.0.timerMins']).toMatch(/whole seconds/);
   });
 });
 

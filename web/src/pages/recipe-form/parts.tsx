@@ -322,14 +322,15 @@ export function StepsEditor({ steps, setForm, errors }: { steps: StepRow[]; setF
                       <label className="flex items-center gap-2 text-[13px] text-ink-2">
                         Timer
                         <input
-                          inputMode="numeric"
-                          placeholder="min"
+                          placeholder="e.g. 15 or 0:30"
                           value={row.timer}
                           onChange={(e) => update(row.key, { timer: e.target.value })}
-                          className={`h-9 w-20 rounded-[9px] border bg-surface px-2.5 ${errors[`${row.key}.timerMins`] ? 'border-danger' : 'border-line-strong'}`}
+                          aria-invalid={errors[`${row.key}.timerMins`] ? true : undefined}
+                          className={`h-9 w-28 rounded-[9px] border bg-surface px-2.5 ${errors[`${row.key}.timerMins`] ? 'border-danger' : 'border-line-strong'}`}
                         />
-                        minutes
+                        <span className="text-xs text-muted">min, m:ss or 45s</span>
                       </label>
+                      {errors[`${row.key}.timerMins`] && <span className="w-full text-xs text-danger">{errors[`${row.key}.timerMins`]}</span>}
                       <label className="flex items-center gap-2 text-[13px] text-ink-2">
                         Part
                         <select value={row.section} onChange={(e) => update(row.key, { section: e.target.value as StepSection })} className="h-9 rounded-[9px] border border-line-strong bg-surface px-2">

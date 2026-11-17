@@ -1,6 +1,8 @@
 import {
   parseQuantity,
+  parseTimer,
   formatQuantity,
+  formatTimerInput,
   RecipeInput,
   type Recipe,
   type RecipeInput as RecipeInputT,
@@ -90,7 +92,7 @@ export function formFromRecipe(r: Recipe): FormState {
       ],
     })),
     steps: r.steps.length
-      ? r.steps.map((s) => ({ key: newKey('s'), section: s.section, title: s.title, text: s.text, timer: num(s.timerMins) }))
+      ? r.steps.map((s) => ({ key: newKey('s'), section: s.section, title: s.title, text: s.text, timer: formatTimerInput(s.timerMins) }))
       : [emptyStep('preparation'), emptyStep('cooking')],
     links: r.links.map((l) => ({ key: newKey('l'), url: l.url, title: l.title })),
     tagIds: r.tags.map((t) => t.id),
@@ -145,10 +147,10 @@ export function toInput(form: FormState): { input: RecipeInputT | null; errors: 
   for (const section of ['preparation', 'cooking'] as const) {
     for (const row of form.steps.filter((s) => s.section === section)) {
       if (!row.text.trim() && !row.title.trim() && !row.timer.trim()) continue;
-      const timer = intOrNull(row.timer);
-      if (timer === 'bad') errors[`${row.key}.timerMins`] = 'Minutes, e.g. 15';
+      const timer = parseTimer(row.timer);
+      if (timer === 'bad') errors[`${row.key}.timerMins`] = 'Use minutes (15), m:ss (1:30) or seconds (45s)';
       pathKeys.set(`steps.${steps.length}`, row.key);
-      steps.push({ section, title: row.title, text: row.text, timerMins: timer === 'bad' || timer === 0 ? null : timer });
+      steps.push({ section, title: row.title, text: row.text, timerMins: timer === 'bad' ? null : timer });
     }
   }
 

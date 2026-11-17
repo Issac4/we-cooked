@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { Client as McpClient } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
@@ -91,7 +92,8 @@ describe('MCP', () => {
     const names = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(names).toEqual([
       'add_comment', 'add_plan_entry', 'add_to_collection', 'create_recipe', 'create_tag', 'get_guide',
-      'get_meal_plan', 'get_recipe', 'list_collections', 'list_tags', 'search_recipes', 'update_recipe',
+      'get_meal_plan', 'get_photo_upload_link', 'get_recipe', 'list_collections', 'list_tags', 'search_recipes',
+      'set_recipe_photo_from_url', 'update_recipe',
     ]);
     expect(names).not.toContain('delete_recipe');
     const guide = await call('get_guide');
@@ -180,4 +182,65 @@ describe('MCP', () => {
     const saved = (await member.get(`/api/recipes/${recipe.id}`)).json;
     expect(saved).toMatchObject({ title: 'Soy Sauce Chicken (less sugar)', needsReview: true, updatedBy: 'Issac' });
   });
+
+  it('lists the photo tools', async () => {
+    const { app } = makeTestApp();
+    const { member } = await createMember(app, 'Issac');
+    const { client } = await connect(app, await newKey(member));
+    const names = (await client.listTools()).tools.map((t) => t.name);
+    expect(names).toEqual(expect.arrayContaining(['set_recipe_photo_from_url', 'get_photo_upload_link']));
+  });
+
+  it('uploads a local photo through a one-time link, once', async () => {
+    const { app } = makeTestApp();
+    const { member } = await createMember(app, 'Issac');
+    const recipe = (await member.post('/api/recipes', recipeBody())).json;
+    const { call } = await connect(app, await newKey(member));
+
+    const res = await call('get_photo_upload_link', { recipeId: recipe.id });
+    expect(res.isError).toBe(false);
+    const link = res.json.command.match(/(https:\/\/wecooked\.test\/api\/photo-drop\/\S+)/)[1] as string;
+    expect(res.json.command).toMatch(/^curl -fsS -F "file=@\/path\/to\/photo\.jpg" https:/);
+
+    const photo = await sharp({ create: { width: 3000, height: 2000, channels: 3, background: '#c86' } }).jpeg().toBuffer();
+    const send = (data: Uint8Array) => {
+      const form = new FormData();
+      form.set('file', new File([new Uint8Array(data)], 'photo.jpg', { type: 'image/jpeg' }));
+      return app.request(link, { method: 'POST', body: form });
+    };
+    // A wrong file does not use up the link.
+    expect((await send(new TextEncoder().encode('not a photo'))).status).toBe(400);
+    const ok = await send(photo);
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toMatchObject({ ok: true, recipeId: recipe.id, width: 1600 });
+    expect((await send(photo)).status).toBe(410);
+
+    const saved = (await member.get(`/api/recipes/${recipe.id}`)).json;
+    expect(saved.coverPhoto).toBeTruthy();
+    expect(saved).toMatchObject({ needsReview: true, aiKeyName: 'Claude on laptop' });
+    expect((await app.request(`/uploads/${saved.coverPhoto}.webp`)).status).toBe(200);
+  });
+
+  it('refuses photo links to private addresses, unknown recipes and read-only keys', async () => {
+    const { app } = makeTestApp();
+    const { member } = await createMember(app, 'Issac');
+    const recipe = (await member.post('/api/recipes', recipeBody())).json;
+    const { call } = await connect(app, await newKey(member));
+    const local = await call('set_recipe_photo_from_url', { recipeId: recipe.id, url: 'http://192.168.2.108/photo.jpg' });
+    expect(local.isError).toBe(true);
+    expect(local.text).toMatch(/private or local address/);
+    expect((await call('get_photo_upload_link', { recipeId: 9999 })).text).toMatch(/Recipe not found/);
+
+    const reader = await connect(app, await newKey(member, 'read', 'Reader'));
+    expect((await reader.call('get_photo_upload_link', { recipeId: recipe.id })).text).toMatch(/read-only/);
+    expect((await reader.call('set_recipe_photo_from_url', { recipeId: recipe.id, url: 'https://example.com/a.jpg' })).text).toMatch(/read-only/);
+  });
+
+  it('refuses an unknown upload link', async () => {
+    const { app } = makeTestApp();
+    const form = new FormData();
+    form.set('file', new File([new Uint8Array([1, 2, 3])], 'x.jpg'));
+    expect((await app.request('/api/photo-drop/not-a-real-token', { method: 'POST', body: form })).status).toBe(410);
+  });
 });
+

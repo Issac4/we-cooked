@@ -273,3 +273,23 @@ export function purgeTrash(db: Db): number {
     .where(lt(recipes.deletedAt, Date.now() - TRASH_DAYS * DAY))
     .run().changes;
 }
+
+/** Sets (or replaces) a recipe's cover photo. An AI change marks the recipe for review. */
+export function setCoverPhoto(db: Db, recipeId: number, uploadId: string, actor: Actor): void {
+  const current = db
+    .select({ updatedAt: recipes.updatedAt, needsReview: recipes.needsReview, aiKeyName: recipes.aiKeyName })
+    .from(recipes)
+    .where(and(eq(recipes.id, recipeId), isNull(recipes.deletedAt)))
+    .get();
+  if (!current) throw new HttpError(404, 'Recipe not found');
+  db.update(recipes)
+    .set({
+      coverPhoto: uploadId,
+      needsReview: actor.apiKeyName ? true : current.needsReview,
+      aiKeyName: actor.apiKeyName ?? current.aiKeyName,
+      updatedBy: actor.userId,
+      updatedAt: Math.max(Date.now(), current.updatedAt + 1),
+    })
+    .where(eq(recipes.id, recipeId))
+    .run();
+}
