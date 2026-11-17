@@ -40,6 +40,41 @@ export function formatQuantity(value: number | null): string {
   return String(Math.round(value * 10) / 10);
 }
 
+// ---------- Step timers ----------
+
+/**
+ * Reads a timer typed in the form: "15" (minutes), "1.5", "1:30", "0:30",
+ * "45s", "90 sec", "2 min". Returns minutes, null when empty, or 'bad'.
+ */
+export function parseTimer(input: string): number | null | 'bad' {
+  const s = input.trim().toLowerCase();
+  if (!s) return null;
+  let secs: number;
+  const clock = s.match(/^(\d+):([0-5]\d)$/);
+  const seconds = s.match(/^(\d+)\s*(s|sec|secs|seconds?)$/);
+  const minutes = s.match(/^(\d+(?:\.\d+)?)\s*(m|min|mins|minutes?)?$/);
+  if (clock) secs = Number(clock[1]) * 60 + Number(clock[2]);
+  else if (seconds) secs = Number(seconds[1]);
+  else if (minutes) secs = Math.round(Number(minutes[1]) * 60);
+  else return 'bad';
+  if (secs <= 0 || secs > 24 * 3600) return 'bad';
+  return secs / 60;
+}
+
+/** For the form box: 15 -> "15", 0.5 -> "0:30", 1.5 -> "1:30". */
+export function formatTimerInput(mins: number | null): string {
+  if (mins === null) return '';
+  const secs = Math.round(mins * 60);
+  return secs % 60 === 0 ? String(secs / 60) : `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+}
+
+/** For the button: "15 min", "30 s", "1:30". */
+export function timerLabel(mins: number): string {
+  const secs = Math.round(mins * 60);
+  if (secs < 60) return `${secs} s`;
+  return secs % 60 === 0 ? `${secs / 60} min` : `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+}
+
 // ---------- Recipe parts ----------
 
 export const Ingredient = z.object({
@@ -64,7 +99,14 @@ export const Step = z.object({
   section: StepSection.describe('preparation = before heat (washing, cutting, marinating); cooking = on the heat and serving'),
   title: z.string().trim().max(120).default(''),
   text: z.string().trim().min(1, 'Describe the step').max(4000).describe('Markdown allowed'),
-  timerMins: z.number().int().positive().max(24 * 60).nullable().default(null),
+  timerMins: z
+    .number()
+    .positive()
+    .max(24 * 60)
+    .refine((v) => Math.abs(v * 60 - Math.round(v * 60)) < 1e-6, 'Use whole seconds (e.g. 0.5 for 30 seconds)')
+    .nullable()
+    .default(null)
+    .describe('Minutes; fractions allowed in whole seconds, e.g. 0.5 = 30 seconds, 1.5 = 1 min 30'),
 });
 export type Step = z.infer<typeof Step>;
 

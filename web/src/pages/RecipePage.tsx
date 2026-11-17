@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ChevronLeft, ExternalLink, Minus, Plus, Timer } from 'lucide-react';
-import { formatQuantity, photoUrl, type Recipe, type Step } from '@wecooked/shared';
+import { formatQuantity, photoUrl, timerLabel, type Recipe, type Step } from '@wecooked/shared';
 import { api, formError } from '../lib/api';
 import { formatMinutes, recipeKey, useRecipe } from '../lib/recipes';
 import { useMe } from '../lib/session';
@@ -91,7 +91,7 @@ function StepTimer({ minutes }: { minutes: number }) {
       setNow(t);
       if (t >= endAt) {
         clearInterval(handle);
-        toast.success(`Timer done: ${minutes} min`);
+        toast.success(`Timer done: ${timerLabel(minutes)}`);
         navigator.vibrate?.([200, 100, 200]);
       }
     };
@@ -109,7 +109,7 @@ function StepTimer({ minutes }: { minutes: number }) {
       }`}
     >
       <Timer size={14} aria-hidden="true" />
-      {running ? (left > 0 ? `${label} · tap to stop` : 'Done · tap to reset') : `Start ${minutes} min timer`}
+      {running ? (left > 0 ? `${label} · tap to stop` : 'Done · tap to reset') : `Start ${timerLabel(minutes)} timer`}
     </button>
   );
 }

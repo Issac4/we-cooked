@@ -62,7 +62,7 @@ export function guide(houseRules: string): string {
 - ingredients: sections; use one section with name "" for the main list, and extra named sections for "Marinade", "Sauce", etc.
   Each item: quantity as a number (0.5, not "1/2"; null when not measured), unit short ("g", "ml", "tbsp", "tsp", "cloves", "slices", "pcs"; "a pinch" goes in unit with quantity null), name (the ingredient only), note (preparation or brand advice).
 - steps: every step has section "preparation" (before heat: washing, cutting, marinating, mixing sauces) or "cooking" (on the heat, resting, assembling, serving).
-  Keep each step to one stage. Put waiting or cooking times in timerMins. Markdown (**bold**, lists) is allowed in text.
+  Keep each step to one stage. Put waiting or cooking times in timerMins (minutes; fractions allowed, e.g. 0.5 = 30 seconds). Markdown (**bold**, lists) is allowed in text.
 - links: the original source URL(s) with a short title.
 - description: one or two sentences, optional.
 
