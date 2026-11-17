@@ -7,7 +7,10 @@ import type { Db } from '../db/index.js';
 import { planRows, recipes, tagGroups, tags } from '../db/schema.js';
 import type { CurrentApiKey, CurrentUser } from '../env.js';
 import { HttpError } from '../http.js';
-import { createRecipe, getRecipe, listRecipes, updateRecipe } from '../recipes/service.js';
+import { createRecipe, getRecipe, listRecipes, setCoverPhoto, updateRecipe } from '../recipes/service.js';
+import { fetchImage } from '../photos/fetch-image.js';
+import { createPhotoDrop } from '../photos/photo-drop.js';
+import { saveImage } from '../routes/uploads.js';
 import { addToCollection, listCollections, recipeIdsIn } from '../routes/collections.js';
 import { addComment } from '../routes/comments.js';
 import { addEntries, planView } from '../routes/plan.js';
@@ -47,10 +50,11 @@ export interface McpContext {
   user: CurrentUser;
   apiKey: CurrentApiKey;
   publicUrl: string;
+  dataDir: string;
 }
 
 /** A fresh MCP server for one request, acting as the key's owner. */
-export function buildMcpServer({ db, user, apiKey, publicUrl }: McpContext): McpServer {
+export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpContext): McpServer {
   const houseRules = getSettings(db).aiRules;
   const server = new McpServer({ name: 'we-cooked', version: '2.0.0' }, { instructions: instructions(houseRules) });
   const actor = { userId: user.id, apiKeyName: apiKey.name };
@@ -183,6 +187,46 @@ export function buildMcpServer({ db, user, apiKey, publicUrl }: McpContext): Mcp
         if (unknown.length) return fail(`Unknown tag id(s): ${unknown.join(', ')}. Valid tags:\n${validTagsMessage(db)}`);
         updateRecipe(db, id, { ...recipe, coverPhoto: current.coverPhoto }, actor);
         return ok({ id, url: recipeUrl(id), message: 'Updated and marked for review.' });
+      }),
+  );
+
+  server.registerTool(
+    'set_recipe_photo_from_url',
+    {
+      title: 'Set a recipe photo from a link',
+      description:
+        'Download a photo from a public http(s) link (e.g. the image on a recipe page, or https://i.ytimg.com/vi/<videoId>/maxresdefault.jpg for a YouTube video) and make it the recipe’s cover. For a file on the user’s computer use get_photo_upload_link instead.',
+      inputSchema: { recipeId: z.number().int(), url: z.string().url().max(2000) },
+    },
+    async ({ recipeId, url }) =>
+      run(async () => {
+        if (!canWrite) return readOnly();
+        if (!getRecipe(db, recipeId)) return fail('Recipe not found.');
+        const upload = await saveImage(db, dataDir, await fetchImage(url), user.id);
+        setCoverPhoto(db, recipeId, upload.id, actor);
+        return ok({ recipeId, url: recipeUrl(recipeId), message: `Photo set (${upload.width}×${upload.height}).` });
+      }),
+  );
+
+  server.registerTool(
+    'get_photo_upload_link',
+    {
+      title: 'Get a one-time photo upload link',
+      description:
+        'For a photo file on the user’s computer: returns a curl command that uploads the file straight to this recipe (no API key needed). Replace the path, then run it in a shell. The link works once and expires in 10 minutes. Max 15 MB; JPEG, PNG, WebP or HEIC.',
+      inputSchema: { recipeId: z.number().int() },
+    },
+    async ({ recipeId }) =>
+      run(() => {
+        if (!canWrite) return readOnly();
+        if (!getRecipe(db, recipeId)) return fail('Recipe not found.');
+        const { token, expiresAt } = createPhotoDrop(recipeId, actor);
+        const link = `${publicUrl}/api/photo-drop/${token}`;
+        return ok({
+          command: `curl -fsS -F "file=@/path/to/photo.jpg" ${link}`,
+          expiresAt: new Date(expiresAt).toISOString(),
+          note: 'Replace /path/to/photo.jpg with the real file (quote paths with spaces). A successful upload prints {"ok":true,...}.',
+        });
       }),
   );
 

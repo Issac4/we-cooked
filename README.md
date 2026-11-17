@@ -84,6 +84,7 @@ Then ask, for example: *"Add this recipe to We Cooked: https://…"*. The server
 - The household's own rules (**Household settings → Rules for AI agents**) are sent to the agent when it connects.
 - Agents can never delete anything or touch accounts, keys, `/admin` or settings.
 - What an agent adds or edits shows **Added by AI · needs review** until someone clicks **Looks good**.
+- Photos: an agent can set a recipe's cover from a public web link (e.g. a YouTube thumbnail), or upload a file from your computer through a one-time link (works once, expires in 10 minutes). Links to private or local addresses are refused.
 
 ## Developing
 

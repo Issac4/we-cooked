@@ -24,6 +24,7 @@ import { settingsRoutes } from './routes/settings.js';
 import { linkPreviewRoutes, recipeRoutes, trashRoutes } from './routes/recipes.js';
 import { tagRoutes } from './routes/tags.js';
 import { servePhotos, uploadRoutes } from './routes/uploads.js';
+import { photoDropRoutes } from './photos/photo-drop.js';
 
 export interface AppDeps {
   config: Config;
@@ -66,6 +67,7 @@ export function createApp({ config, db }: AppDeps) {
   api.route('/trash', trashRoutes());
   api.route('/collections', collectionRoutes());
   api.route('/uploads', uploadRoutes());
+  api.route('/photo-drop', photoDropRoutes());
   api.route('/link-preview', linkPreviewRoutes());
   api.route('/plan', planRoutes());
   api.route('/settings', settingsRoutes());
@@ -81,7 +83,7 @@ export function createApp({ config, db }: AppDeps) {
     if (!found) {
       return c.json({ error: 'Missing or invalid API key. Create one on your Me page in We Cooked.' }, 401, { 'WWW-Authenticate': 'Bearer' });
     }
-    const server = buildMcpServer({ db, user: found.user, apiKey: found.apiKey, publicUrl: config.publicUrl });
+    const server = buildMcpServer({ db, user: found.user, apiKey: found.apiKey, publicUrl: config.publicUrl, dataDir: config.dataDir });
     const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     await server.connect(transport);
     try {

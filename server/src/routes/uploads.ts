@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { and, eq, isNull, lt, sql } from 'drizzle-orm';
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import sharp from 'sharp';
 import type { Upload } from '@wecooked/shared';
@@ -21,69 +21,68 @@ export function uploadsDir(dataDir: string): string {
   return path.join(dataDir, 'uploads');
 }
 
+/**
+ * Checks that the bytes are a real photo, then stores a 1600px WebP and a 640px
+ * thumbnail with the camera orientation applied and all metadata (GPS, camera)
+ * dropped. Used by the website upload, photo links and agent uploads alike.
+ */
+export async function saveImage(db: Db, dataDir: string, input: Buffer, userId: number): Promise<Upload> {
+  if (input.length > MAX_UPLOAD_BYTES) throw new HttpError(400, 'That photo is too large. The limit is 15 MB.');
+  let format: string | undefined;
+  try {
+    format = (await sharp(input).metadata()).format;
+  } catch {
+    format = undefined;
+  }
+  if (!format || !ACCEPTED.has(format)) {
+    throw new HttpError(400, 'That file is not a photo we can read. Use JPEG, PNG, WebP or HEIC.');
+  }
+
+  const id = randomToken(12);
+  const dir = uploadsDir(dataDir);
+  await fs.mkdir(dir, { recursive: true });
+  const full = await sharp(input)
+    .rotate()
+    .resize({ width: FULL_SIZE, height: FULL_SIZE, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer({ resolveWithObject: true });
+  const thumb = await sharp(input)
+    .rotate()
+    .resize({ width: THUMB_SIZE, height: THUMB_SIZE, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 75 })
+    .toBuffer();
+  await fs.writeFile(path.join(dir, `${id}.webp`), full.data);
+  await fs.writeFile(path.join(dir, `${id}-thumb.webp`), thumb);
+
+  db.insert(uploads)
+    .values({ id, width: full.info.width, height: full.info.height, bytes: full.data.length + thumb.length, createdBy: userId, createdAt: Date.now() })
+    .run();
+  return { id, width: full.info.width, height: full.info.height };
+}
+
+/** Reads the "file" field of a multipart upload, within the size limit. */
+export const photoBodyLimit = bodyLimit({
+  maxSize: MAX_UPLOAD_BYTES + 64 * 1024,
+  onError: () => {
+    throw new HttpError(400, 'That photo is too large. The limit is 15 MB.');
+  },
+});
+
+export async function readPhotoField(c: Context): Promise<Buffer> {
+  const body = await c.req.parseBody();
+  const file = body.file;
+  if (!(file instanceof File)) throw new HttpError(400, 'Send the photo as a multipart field named "file"');
+  if (file.size > MAX_UPLOAD_BYTES) throw new HttpError(400, 'That photo is too large. The limit is 15 MB.');
+  return Buffer.from(await file.arrayBuffer());
+}
+
 /** POST /api/uploads (multipart, field "file"). */
 export function uploadRoutes() {
   const app = new Hono<AppEnv>();
-
-  app.post(
-    '/',
-    requireMember,
-    bodyLimit({
-      maxSize: MAX_UPLOAD_BYTES + 64 * 1024,
-      onError: () => {
-        throw new HttpError(400, 'That photo is too large. The limit is 15 MB.');
-      },
-    }),
-    async (c) => {
-      const body = await c.req.parseBody();
-      const file = body.file;
-      if (!(file instanceof File)) throw new HttpError(400, 'Choose a photo to upload');
-      if (file.size > MAX_UPLOAD_BYTES) throw new HttpError(400, 'That photo is too large. The limit is 15 MB.');
-
-      const input = Buffer.from(await file.arrayBuffer());
-      let format: string | undefined;
-      try {
-        format = (await sharp(input).metadata()).format;
-      } catch {
-        format = undefined;
-      }
-      if (!format || !ACCEPTED.has(format)) {
-        throw new HttpError(400, 'That file is not a photo we can read. Use JPEG, PNG, WebP or HEIC.');
-      }
-
-      const id = randomToken(12);
-      const dir = uploadsDir(c.var.config.dataDir);
-      await fs.mkdir(dir, { recursive: true });
-      // .rotate() applies the camera orientation; metadata (GPS, camera) is not copied.
-      const full = await sharp(input)
-        .rotate()
-        .resize({ width: FULL_SIZE, height: FULL_SIZE, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 80 })
-        .toBuffer({ resolveWithObject: true });
-      const thumb = await sharp(input)
-        .rotate()
-        .resize({ width: THUMB_SIZE, height: THUMB_SIZE, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 75 })
-        .toBuffer();
-      await fs.writeFile(path.join(dir, `${id}.webp`), full.data);
-      await fs.writeFile(path.join(dir, `${id}-thumb.webp`), thumb);
-
-      c.var.db
-        .insert(uploads)
-        .values({
-          id,
-          width: full.info.width,
-          height: full.info.height,
-          bytes: full.data.length + thumb.length,
-          createdBy: c.var.user!.id,
-          createdAt: Date.now(),
-        })
-        .run();
-      const res: Upload = { id, width: full.info.width, height: full.info.height };
-      return c.json(res, 201);
-    },
-  );
-
+  app.post('/', requireMember, photoBodyLimit, async (c) => {
+    const upload = await saveImage(c.var.db, c.var.config.dataDir, await readPhotoField(c), c.var.user!.id);
+    return c.json(upload, 201);
+  });
   return app;
 }
 

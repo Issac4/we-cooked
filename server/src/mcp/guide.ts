@@ -66,6 +66,11 @@ export function guide(houseRules: string): string {
 - links: the original source URL(s) with a short title.
 - description: one or two sentences, optional.
 
+## Photos
+- After create_recipe, add a cover photo if you have one:
+  - from a web page or video: set_recipe_photo_from_url (YouTube: https://i.ytimg.com/vi/<videoId>/maxresdefault.jpg);
+  - from a file on the user's computer: get_photo_upload_link, then run the curl command it returns with the real file path.
+
 ## After creating
 - Tell the user what you added and that it shows "Added by AI · needs review" until a member checks it.
 - Use add_comment for tips that are opinions or experiences rather than steps.
