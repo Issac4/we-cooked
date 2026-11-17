@@ -1,4 +1,4 @@
-import { and, asc, eq, max, ne } from 'drizzle-orm';
+import { and, asc, eq, max, ne, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { RenameInput, TagGroupInput, TagInput, usernameKey as nameKey, type TagGroup } from '@wecooked/shared';
 import type { Db } from '../db/index.js';
@@ -31,7 +31,8 @@ export function seedDefaultTags(db: Db): void {
 
 export function listTagGroups(db: Db): TagGroup[] {
   const groups = db.select().from(tagGroups).orderBy(asc(tagGroups.position), asc(tagGroups.id)).all();
-  const all = db.select().from(tags).orderBy(asc(tags.position), asc(tags.id)).all();
+  // Tags are always A→Z (case-insensitive), so new ones land in the right place.
+  const all = db.select().from(tags).orderBy(sql`${tags.name} collate nocase`, asc(tags.id)).all();
   return groups.map((g) => ({
     id: g.id,
     name: g.name,

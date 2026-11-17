@@ -46,7 +46,7 @@ function tagsFor(db: Db, ids: number[]): Map<number, Tag[]> {
     .innerJoin(tags, eq(tags.id, recipeTags.tagId))
     .innerJoin(tagGroups, eq(tagGroups.id, tags.groupId))
     .where(inArray(recipeTags.recipeId, ids))
-    .orderBy(asc(tagGroups.position), asc(tags.position))
+    .orderBy(asc(tagGroups.position), sql`${tags.name} collate nocase`)
     .all();
   for (const r of rows) {
     const list = map.get(r.recipeId) ?? [];

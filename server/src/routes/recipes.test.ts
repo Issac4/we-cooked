@@ -216,6 +216,26 @@ describe('filter groups and tags', () => {
   });
 });
 
+describe('tag order', () => {
+  it('is always A to Z, wherever a tag was added', async () => {
+    const { app } = makeTestApp();
+    const { member } = await createMember(app, 'Issac');
+    const groups = (await member.get('/api/tags')).json;
+    const cuisine = groups.find((g: any) => g.name === 'Cuisine');
+    await member.post('/api/tags', { groupId: cuisine.id, name: 'Hakka' });
+    await member.post('/api/tags', { groupId: cuisine.id, name: 'african' });
+    const names = (await member.get('/api/tags')).json.find((g: any) => g.name === 'Cuisine').tags.map((t: any) => t.name);
+    expect(names).toEqual(['african', 'Cantonese', 'Chinese', 'Hakka', 'Japanese', 'Korean', 'Southeast Asian', 'Western']);
+    const protein = groups.find((g: any) => g.name === 'Protein').tags.map((t: any) => t.name);
+    expect(protein).toEqual([...protein].sort((a: string, b: string) => a.localeCompare(b)));
+
+    // Tags on a recipe follow the same order within each group.
+    const ids = (await member.get('/api/tags')).json.flatMap((g: any) => g.tags).filter((t: any) => ['Pork', 'Beef', 'Hakka'].includes(t.name)).map((t: any) => t.id);
+    const { id } = (await member.post('/api/recipes', recipeBody({ tagIds: ids }))).json;
+    expect((await member.get(`/api/recipes/${id}`)).json.tags.map((t: any) => t.name)).toEqual(['Beef', 'Pork', 'Hakka']);
+  });
+});
+
 describe('link titles', () => {
   it('only looks up YouTube links', async () => {
     const { app } = makeTestApp();
