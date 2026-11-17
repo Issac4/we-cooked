@@ -7,8 +7,11 @@ import type { AppEnv } from '../env.js';
 import { HttpError, humanOnly, parseBody, requireMember } from '../http.js';
 
 const DEFAULT_GROUPS: Array<[string, string[]]> = [
-  ['Protein', ['Chicken', 'Pork', 'Beef', 'Fish', 'Seafood', 'Egg', 'Tofu', 'Vegetarian']],
-  ['Meal', ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Soup']],
+  [
+    'Protein',
+    ['Beef', 'Cheese', 'Chicken', 'Clam', 'Crab', 'Duck', 'Egg', 'Fish', 'Lamb', 'Lobster', 'Milk', 'Mushrooms', 'Mussel', 'Oyster', 'Pork', 'Scallop', 'Seafood', 'Shrimp', 'Tofu', 'Vegetarian'],
+  ],
+  ['Meal', ['Appetizer', 'Beverage', 'Breakfast', 'Brunch', 'Dessert', 'Dinner', 'Lunch', 'Snack', 'Soup']],
   ['Cuisine', ['Cantonese', 'Chinese', 'Japanese', 'Korean', 'Southeast Asian', 'Western']],
 ];
 
