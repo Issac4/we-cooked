@@ -1,0 +1,16 @@
+# Production: pulls the published image. Put this file and a .env next to it
+# on the server, then:
+#   docker compose pull && docker compose up -d
+services:
+  app:
+    image: ghcr.io/issac4/we-cooked:latest
+    env_file: .env
+    ports:
+      # Host port 80, same as v1, so the Cloudflare Tunnel needs no change.
+      - "80:8000"
+    volumes:
+      - wecooked-data:/data
+    restart: unless-stopped
+
+volumes:
+  wecooked-data:

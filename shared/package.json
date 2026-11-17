@@ -1,0 +1,16 @@
+{
+  "name": "@wecooked/shared",
+  "version": "2.0.0-dev",
+  "private": true,
+  "type": "module",
+  "description": "Schemas and types shared by the server, the web app and the MCP tools.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  }
+}

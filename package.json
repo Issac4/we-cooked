@@ -1,0 +1,27 @@
+{
+  "name": "we-cooked",
+  "version": "2.0.0-dev",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n server,web -c green,cyan \"npm run dev -w server\" \"npm run dev -w web\"",
+    "build": "npm run build -w web && npm run build -w server",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "playwright test",
+    "check": "npm run typecheck && npm run test && npm run build && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "concurrently": "10.0.7",
+    "typescript": "6.0.3"
+  }
+}
