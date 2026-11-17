@@ -8,7 +8,7 @@ import { api, formError } from '../lib/api';
 import { formatMinutes, recipeKey, useRecipe } from '../lib/recipes';
 import { useMe } from '../lib/session';
 import { Markdown } from '../components/Markdown';
-import { RatingLine } from '../components/Stars';
+import { RatingLine } from '../components/Hearts';
 import { RecipePhoto } from '../components/RecipePhoto';
 import { RecipeCollections } from '../components/RecipeCollections';
 import { RecipeNotes } from '../components/RecipeNotes';

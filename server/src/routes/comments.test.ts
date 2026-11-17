@@ -58,7 +58,7 @@ describe('notes on recipes', () => {
     const list = (await issac.get(`/api/recipes/${id}/comments`)).json;
     expect(list[0]).toMatchObject({ author: null, body: 'Use less ginger', mine: false });
   });
-  it('takes an optional 1–5 star rating; a note needs text, a rating, or both', async () => {
+  it('takes an optional 1–5 rating; a note needs text, a rating, or both', async () => {
     const { app } = makeTestApp();
     const { member } = await createMember(app, 'Issac');
     const { id } = (await member.post('/api/recipes', recipeBody())).json;
@@ -90,7 +90,7 @@ describe('notes on recipes', () => {
     await issac.post(`/api/recipes/${cake}/comments`, { body: 'Less sugar next time', rating: 4 });
     await bethany.post(`/api/recipes/${cake}/comments`, { rating: 5 });
     await dad.post(`/api/recipes/${cake}/comments`, { rating: 2 });
-    await dad.post(`/api/recipes/${cake}/comments`, { body: 'No stars, just a tip' });
+    await dad.post(`/api/recipes/${cake}/comments`, { body: 'No rating, just a tip' });
 
     const r = (await new Client(app).get(`/api/recipes/${cake}`)).json;
     expect(r.rating).toEqual({

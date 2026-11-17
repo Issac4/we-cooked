@@ -251,11 +251,11 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
     {
       title: 'Add a note to a recipe',
       description:
-        'A "note from the kitchen": tips, brand advice, what to change next time, and optionally a 1–5 star rating. Posted as the key’s owner, so only include a rating the person actually gave; never guess one. Each member’s latest rating counts once in the recipe’s score.',
+        'A "note from the kitchen": tips, brand advice, what to change next time, and optionally a 1–5 rating, shown as hearts. Posted as the key’s owner, so only include a rating the person actually gave; never guess one. Each member’s latest rating counts once in the recipe’s score.',
       inputSchema: {
         recipeId: z.number().int(),
         body: z.string().trim().max(2000).optional().describe('The note; may be empty when only rating'),
-        rating: z.number().int().min(1).max(5).optional().describe('Stars the person gave, 1–5'),
+        rating: z.number().int().min(1).max(5).optional().describe('Hearts the person gave, 1–5'),
       },
     },
     async ({ recipeId, body, rating }) =>

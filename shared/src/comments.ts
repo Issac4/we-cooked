@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 export const MAX_RATING = 5;
-export const Rating = z.number().int().min(1, 'Pick 1 to 5 stars').max(MAX_RATING, 'Pick 1 to 5 stars');
+export const Rating = z.number().int().min(1, 'Pick 1 to 5 hearts').max(MAX_RATING, 'Pick 1 to 5 hearts');
 
-/** A note is some text, a star rating, or both. */
+/** A note is some text, a 1–5 rating (hearts), or both. */
 export const CommentInput = z
   .object({
     body: z.string().trim().max(2000, 'Keep it under 2000 characters').default(''),

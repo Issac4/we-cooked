@@ -178,7 +178,7 @@ export const comments = sqliteTable(
       .references(() => recipes.id, { onDelete: 'cascade' }),
     authorId: integer('author_id').references(() => users.id, { onDelete: 'set null' }),
     body: text('body').notNull(),
-    /** 1–5 stars, or null for a plain note. */
+    /** 1–5 (shown as hearts), or null for a plain note. */
     rating: integer('rating'),
     createdAt: integer('created_at').notNull(),
     editedAt: integer('edited_at'),

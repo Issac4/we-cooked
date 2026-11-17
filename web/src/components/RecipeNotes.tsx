@@ -7,7 +7,7 @@ import { api, fieldError, formError } from '../lib/api';
 import { useMe } from '../lib/session';
 import { Avatar } from './AppShell';
 import { Alert, Button, formatDate } from './ui';
-import { StarPicker, Stars } from './Stars';
+import { HeartPicker, Hearts } from './Hearts';
 import { recipeKey } from '../lib/recipes';
 
 const notesKey = (recipeId: number) => ['comments', recipeId] as const;
@@ -54,7 +54,7 @@ function NoteBox({ initial = '', initialRating = null, label, submitLabel, busy,
           className="rounded-[10px] border border-line-strong bg-page px-3 py-2.5 text-ink placeholder:text-muted"
         />
       </label>
-      <StarPicker value={rating} onChange={setRating} />
+      <HeartPicker value={rating} onChange={setRating} />
       {(fieldError(error, 'body') ?? formError(error)) && <Alert>{fieldError(error, 'body') ?? formError(error)}</Alert>}
       <div className="flex justify-end gap-2">
         {onCancel && (
@@ -90,7 +90,7 @@ function Note({ note, recipeId }: { note: Comment; recipeId: number }) {
             </span>
             {note.rating && (
               <span className="ml-1.5">
-                <Stars value={note.rating} />
+                <Hearts value={note.rating} />
               </span>
             )}
           </span>
