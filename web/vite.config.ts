@@ -10,10 +10,12 @@ export default defineConfig({
   server: {
     port: Number(process.env.DEV_WEB_PORT ?? 5180),
     strictPort: true,
+    // Keep the browser's Host header (changeOrigin: false) so the server's
+    // same-origin check sees localhost:5180 on both sides.
     proxy: {
-      '/api': backend,
-      '/mcp': backend,
-      '/uploads': backend,
+      '/api': { target: backend, changeOrigin: false },
+      '/mcp': { target: backend, changeOrigin: false },
+      '/uploads': { target: backend, changeOrigin: false },
     },
   },
 });
