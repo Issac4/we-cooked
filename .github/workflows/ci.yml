@@ -27,6 +27,11 @@ jobs:
       - run: npm test
       - run: npm run build
 
+      - name: End-to-end tests (real build, throwaway database)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+
       - name: Test release tag validation logic
         run: ./tests/test_release_tag_validation.sh
 

@@ -16,9 +16,11 @@
     "build": "npm run build -w web && npm run build -w server",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "test:e2e": "playwright test",
+    "check": "npm run typecheck && npm run test && npm run build && npm run test:e2e"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.1",
     "concurrently": "10.0.7",
     "typescript": "6.0.3"
   }

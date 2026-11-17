@@ -6,6 +6,11 @@ import { secureHeaders } from 'hono/secure-headers';
 import type { HealthResponse } from '@wecooked/shared';
 import type { Config } from './config.js';
 import type { Db } from './db/index.js';
+import type { AppEnv } from './env.js';
+import { errorResponse, HttpError, loadSession, sameOrigin } from './http.js';
+import { adminRoutes } from './routes/admin.js';
+import { authRoutes } from './routes/auth.js';
+import { meRoutes } from './routes/me.js';
 
 export interface AppDeps {
   config: Config;
@@ -13,17 +18,33 @@ export interface AppDeps {
 }
 
 export function createApp({ config, db }: AppDeps) {
-  const app = new Hono();
+  const app = new Hono<AppEnv>();
 
   app.use(secureHeaders({ crossOriginEmbedderPolicy: false }));
+  app.use(async (c, next) => {
+    c.set('config', config);
+    c.set('db', db);
+    await next();
+  });
 
-  const api = new Hono();
+  app.onError((err, c) => {
+    if (err instanceof HttpError) return errorResponse(c, err);
+    console.error(err);
+    return c.json({ error: 'Something went wrong on the server' }, 500);
+  });
+
+  const api = new Hono<AppEnv>();
+  api.use(sameOrigin, loadSession);
 
   api.get('/health', (c) => {
     db.$client.prepare('select 1').get();
     const body: HealthResponse = { ok: true, version: config.version };
     return c.json(body);
   });
+
+  api.route('/auth', authRoutes());
+  api.route('/me', meRoutes());
+  api.route('/admin', adminRoutes());
 
   // Must stay last: anything under /api that no route matched.
   api.all('*', (c) => c.json({ error: 'Not found' }, 404));
