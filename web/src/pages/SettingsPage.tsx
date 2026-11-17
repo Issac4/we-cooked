@@ -5,6 +5,7 @@ import type { TagGroup } from '@wecooked/shared';
 import { api, formError } from '../lib/api';
 import { tagsKey, useTagGroups } from '../lib/recipes';
 import { Alert, Button, Card } from '../components/ui';
+import { PlanSettings } from './settings/PlanSettings';
 
 /** Small inline "name" editor used for groups and tags. */
 function InlineName({ initial, label, onSave, onCancel, busy }: { initial: string; label: string; onSave: (name: string) => void; onCancel: () => void; busy: boolean }) {
@@ -151,10 +152,7 @@ export function SettingsPage() {
         {groups.data?.map((g) => <GroupEditor key={g.id} group={g} />)}
         <NewGroup />
       </Card>
-      <Card>
-        <h2 className="text-lg font-bold">Meal plan and AI agents</h2>
-        <p className="text-muted">Week start, public holidays and rules for AI agents arrive with those features.</p>
-      </Card>
+      <PlanSettings />
     </div>
   );
 }

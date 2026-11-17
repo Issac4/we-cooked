@@ -62,7 +62,7 @@ test.describe.serial('recipes', () => {
     await expect(cook.getByText('豉油雞')).toBeVisible();
     await expect(cook.getByRole('heading', { name: 'Marinade' })).toBeVisible();
     await expect(cook.getByRole('heading', { name: 'Preparation' })).toBeVisible();
-    await expect(cook.getByRole('heading', { name: 'Cooking' })).toBeVisible();
+    await expect(cook.getByRole('heading', { name: 'Cooking', exact: true })).toBeVisible();
     await expect(cook.locator('strong', { hasText: 'low' })).toBeVisible();
     await expect(cook.getByRole('button', { name: 'Start 15 min timer' })).toBeVisible();
     await expect(cook.getByText('½ cup')).toBeVisible();

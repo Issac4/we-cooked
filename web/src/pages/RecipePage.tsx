@@ -11,6 +11,7 @@ import { Markdown } from '../components/Markdown';
 import { RecipePhoto } from '../components/RecipePhoto';
 import { RecipeCollections } from '../components/RecipeCollections';
 import { RecipeNotes } from '../components/RecipeNotes';
+import { AddToPlanButton, CookingHistory } from '../components/RecipePlanning';
 import { Alert, Button, formatDate } from '../components/ui';
 
 function Ingredients({ recipe }: { recipe: Recipe }) {
@@ -255,6 +256,7 @@ export function RecipePage() {
           )}
           {me && (
             <div className="mt-1 flex flex-wrap gap-2.5">
+              <AddToPlanButton recipeId={r.id} title={r.title} />
               <Link to={`/recipes/${r.id}/edit`} className="flex h-11 items-center rounded-xl border border-line-strong bg-surface px-[18px] font-semibold text-ink no-underline hover:bg-sidebar hover:text-ink">
                 Edit
               </Link>
@@ -276,6 +278,8 @@ export function RecipePage() {
           </p>
         </div>
       </section>
+
+      {me && <CookingHistory recipeId={r.id} />}
 
       <section className="flex flex-col items-start gap-8 lg:flex-row">
         <Ingredients recipe={r} />

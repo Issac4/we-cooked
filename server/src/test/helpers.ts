@@ -5,6 +5,7 @@ import { loadConfig } from '../config.js';
 import { openDb, type Db } from '../db/index.js';
 import { createApp } from '../app.js';
 import { seedDefaultTags } from '../routes/tags.js';
+import { seedDefaultRows } from '../routes/plan.js';
 
 export const ADMIN_PASSWORD = 'test-admin-password-1234';
 
@@ -21,6 +22,7 @@ export function makeTestApp() {
   });
   const db = openDb(':memory:', config.migrationsDir);
   seedDefaultTags(db);
+  seedDefaultRows(db);
   const app = createApp({ config, db });
   return { app, db, config };
 }

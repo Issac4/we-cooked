@@ -98,7 +98,10 @@ export function useRecipeList() {
       const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]);
       return api.get(`/recipes?${qs.toString()}`, RecipeList);
     },
-    placeholderData: (prev) => prev,
+    // Keep showing the old list while typing or toggling pills, but never carry a list
+    // into a different collection (its cards would offer "Remove from" wrongly).
+    placeholderData: (prev, prevQuery) =>
+      (prevQuery?.queryKey[1] as { collection?: string } | undefined)?.collection === params.collection ? prev : undefined,
   });
 }
 

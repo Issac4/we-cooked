@@ -29,6 +29,13 @@
       "when": 1794896227493,
       "tag": "0003_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794896492312,
+      "tag": "0004_meal_plan",
+      "breakpoints": true
     }
   ]
 }

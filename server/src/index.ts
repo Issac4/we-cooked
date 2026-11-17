@@ -6,6 +6,7 @@ import { createApp } from './app.js';
 import { purgeExpiredSessions } from './auth/sessions.js';
 import { purgeTrash } from './recipes/service.js';
 import { seedDefaultTags } from './routes/tags.js';
+import { seedDefaultRows } from './routes/plan.js';
 import { cleanOrphanUploads } from './routes/uploads.js';
 
 let config: ReturnType<typeof loadConfig>;
@@ -18,6 +19,7 @@ try {
 
 const db = openDb(path.join(config.dataDir, 'wecooked.db'), config.migrationsDir);
 seedDefaultTags(db);
+seedDefaultRows(db);
 const app = createApp({ config, db });
 
 /** Hourly housekeeping: old sessions, 30-day-old Trash, photos no recipe uses. */

@@ -4,6 +4,7 @@ export * from './auth.js';
 export * from './recipes.js';
 export * from './collections.js';
 export * from './comments.js';
+export * from './plan.js';
 
 export const APP_NAME = 'We Cooked';
 

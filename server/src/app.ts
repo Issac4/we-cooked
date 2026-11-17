@@ -13,6 +13,8 @@ import { collectionRoutes } from './routes/collections.js';
 import { commentRoutes, recipeCommentRoutes } from './routes/comments.js';
 import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
+import { planRoutes } from './routes/plan.js';
+import { settingsRoutes } from './routes/settings.js';
 import { linkPreviewRoutes, recipeRoutes, trashRoutes } from './routes/recipes.js';
 import { tagRoutes } from './routes/tags.js';
 import { servePhotos, uploadRoutes } from './routes/uploads.js';
@@ -58,6 +60,8 @@ export function createApp({ config, db }: AppDeps) {
   api.route('/collections', collectionRoutes());
   api.route('/uploads', uploadRoutes());
   api.route('/link-preview', linkPreviewRoutes());
+  api.route('/plan', planRoutes());
+  api.route('/settings', settingsRoutes());
 
   // Must stay last: anything under /api that no route matched.
   api.all('*', (c) => c.json({ error: 'Not found' }, 404));

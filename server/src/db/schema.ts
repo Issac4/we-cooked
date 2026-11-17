@@ -182,6 +182,49 @@ export const comments = sqliteTable(
   (t) => [index('comments_recipe_idx').on(t.recipeId, t.createdAt)],
 );
 
+// ---------- Meal plan ----------
+
+/** Rows of the week grid: Breakfast, Lunch, Dinner, plus any the household adds. */
+export const planRows = sqliteTable('plan_rows', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  position: integer('position').notNull(),
+});
+
+/** One thing planned in a cell: a linked recipe or plain text. */
+export const planEntries = sqliteTable(
+  'plan_entries',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    date: text('date').notNull(),
+    rowId: integer('row_id')
+      .notNull()
+      .references(() => planRows.id, { onDelete: 'cascade' }),
+    recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
+    /** Recipe title when added (kept if the recipe is later deleted), or the typed text. */
+    label: text('label').notNull(),
+    position: integer('position').notNull(),
+    createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [index('plan_entries_date_idx').on(t.date), index('plan_entries_recipe_idx').on(t.recipeId, t.date)],
+);
+
+/** Trips, visits and parties shown above the grid. */
+export const planEvents = sqliteTable(
+  'plan_events',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    name: text('name').notNull(),
+    fromDate: text('from_date').notNull(),
+    toDate: text('to_date').notNull(),
+    away: integer('away', { mode: 'boolean' }).notNull(),
+    createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [index('plan_events_range_idx').on(t.fromDate, t.toDate)],
+);
+
 /** What happened on /admin and with invites, newest first in the UI. */
 export const adminLog = sqliteTable('admin_log', {
   id: integer('id').primaryKey({ autoIncrement: true }),
