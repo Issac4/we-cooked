@@ -7,25 +7,40 @@ import { api, fieldError, formError } from '../lib/api';
 import { useMe } from '../lib/session';
 import { Avatar } from './AppShell';
 import { Alert, Button, formatDate } from './ui';
+import { HeartPicker, Hearts } from './Hearts';
+import { recipeKey } from '../lib/recipes';
 
 const notesKey = (recipeId: number) => ['comments', recipeId] as const;
+type NoteInput = { body: string; rating: number | null };
 
-function NoteBox({ initial = '', label, submitLabel, busy, error, onSubmit, onCancel }: {
+/** Notes and the recipe's score (page header, cards, "Highest rated") change together. */
+function useRefreshNotes(recipeId: number) {
+  const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: notesKey(recipeId) });
+    qc.invalidateQueries({ queryKey: recipeKey(recipeId) });
+    qc.invalidateQueries({ queryKey: ['recipes'] });
+  };
+}
+
+function NoteBox({ initial = '', initialRating = null, label, submitLabel, busy, error, onSubmit, onCancel }: {
   initial?: string;
+  initialRating?: number | null;
   label: string;
   submitLabel: string;
   busy: boolean;
   error: unknown;
-  onSubmit: (body: string, reset: () => void) => void;
+  onSubmit: (note: NoteInput, reset: () => void) => void;
   onCancel?: () => void;
 }) {
   const [body, setBody] = useState(initial);
+  const [rating, setRating] = useState<number | null>(initialRating);
   return (
     <form
       className="flex flex-col gap-2"
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit(body, () => setBody(''));
+        onSubmit({ body, rating }, () => (setBody(''), setRating(null)));
       }}
       noValidate
     >
@@ -39,6 +54,7 @@ function NoteBox({ initial = '', label, submitLabel, busy, error, onSubmit, onCa
           className="rounded-[10px] border border-line-strong bg-page px-3 py-2.5 text-ink placeholder:text-muted"
         />
       </label>
+      <HeartPicker value={rating} onChange={setRating} />
       {(fieldError(error, 'body') ?? formError(error)) && <Alert>{fieldError(error, 'body') ?? formError(error)}</Alert>}
       <div className="flex justify-end gap-2">
         {onCancel && (
@@ -46,7 +62,7 @@ function NoteBox({ initial = '', label, submitLabel, busy, error, onSubmit, onCa
             Cancel
           </Button>
         )}
-        <Button type="submit" size="sm" busy={busy} disabled={!body.trim()}>
+        <Button type="submit" size="sm" busy={busy} disabled={!body.trim() && !rating}>
           {submitLabel}
         </Button>
       </div>
@@ -55,10 +71,9 @@ function NoteBox({ initial = '', label, submitLabel, busy, error, onSubmit, onCa
 }
 
 function Note({ note, recipeId }: { note: Comment; recipeId: number }) {
-  const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const refresh = () => qc.invalidateQueries({ queryKey: notesKey(recipeId) });
-  const edit = useMutation({ mutationFn: (body: string) => api.patch(`/comments/${note.id}`, { body }), onSuccess: () => { setEditing(false); refresh(); } });
+  const refresh = useRefreshNotes(recipeId);
+  const edit = useMutation({ mutationFn: (n: NoteInput) => api.patch(`/comments/${note.id}`, n), onSuccess: () => { setEditing(false); refresh(); } });
   const remove = useMutation({ mutationFn: () => api.del(`/comments/${note.id}`), onSuccess: refresh });
   const author = note.author ?? 'A former member';
 
@@ -73,6 +88,11 @@ function Note({ note, recipeId }: { note: Comment; recipeId: number }) {
               · {formatDate(note.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}
               {note.editedAt ? ' · edited' : ''}
             </span>
+            {note.rating && (
+              <span className="ml-1.5">
+                <Hearts value={note.rating} />
+              </span>
+            )}
           </span>
           {note.mine && !editing && (
             <span className="flex gap-3">
@@ -92,15 +112,16 @@ function Note({ note, recipeId }: { note: Comment; recipeId: number }) {
         {editing ? (
           <NoteBox
             initial={note.body}
+            initialRating={note.rating}
             label="Edit your note"
             submitLabel="Save"
             busy={edit.isPending}
             error={edit.error}
-            onSubmit={(body) => edit.mutate(body)}
+            onSubmit={(n) => edit.mutate(n)}
             onCancel={() => setEditing(false)}
           />
         ) : (
-          <p className="whitespace-pre-line text-ink-2">{note.body}</p>
+          note.body && <p className="whitespace-pre-line text-ink-2">{note.body}</p>
         )}
         {remove.isError && <Alert>{formError(remove.error)}</Alert>}
       </div>
@@ -111,12 +132,12 @@ function Note({ note, recipeId }: { note: Comment; recipeId: number }) {
 /** "Notes from the kitchen": newest first, with the box to add one at the top. */
 export function RecipeNotes({ recipeId }: { recipeId: number }) {
   const { me } = useMe();
-  const qc = useQueryClient();
+  const refresh = useRefreshNotes(recipeId);
   const location = useLocation();
   const notes = useQuery({ queryKey: notesKey(recipeId), queryFn: () => api.get(`/recipes/${recipeId}/comments`, z.array(Comment)) });
   const add = useMutation({
-    mutationFn: (body: string) => api.post(`/recipes/${recipeId}/comments`, { body }, Comment),
-    onSuccess: () => qc.invalidateQueries({ queryKey: notesKey(recipeId) }),
+    mutationFn: (n: NoteInput) => api.post(`/recipes/${recipeId}/comments`, n, Comment),
+    onSuccess: refresh,
   });
 
   return (
@@ -127,11 +148,11 @@ export function RecipeNotes({ recipeId }: { recipeId: number }) {
       {me ? (
         <div className="rounded-2xl border border-line-strong bg-surface px-4 py-3.5">
           <NoteBox
-            label="Add a note: a brand that worked, a tweak, what to try next time"
+            label="Add a note: a brand that worked, a tweak, what to try next time, and your rating"
             submitLabel="Post note"
             busy={add.isPending}
             error={add.error}
-            onSubmit={(body, reset) => add.mutate(body, { onSuccess: reset })}
+            onSubmit={(n, reset) => add.mutate(n, { onSuccess: reset })}
           />
         </div>
       ) : (

@@ -14,6 +14,7 @@ import type { Db } from '../db/index.js';
 import { recipes, recipeTags, tagGroups, tags, uploads, users } from '../db/schema.js';
 import { HttpError } from '../http.js';
 import { collectionsOf } from '../routes/collections.js';
+import { ratingsFor } from '../routes/comments.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -110,7 +111,18 @@ export function listRecipes(db: Db, opts: ListOptions = {}): RecipeList {
     db,
     rows.map((r) => r.id),
   );
-  const cards: RecipeCard[] = rows.map((r) => ({ ...r, tags: tagMap.get(r.id) ?? [] }));
+  const ids = rows.map((r) => r.id);
+  const ratingMap = ratingsFor(db, ids);
+  const cards: RecipeCard[] = rows.map((r) => ({ ...r, tags: tagMap.get(r.id) ?? [], rating: ratingMap.get(r.id) ?? null }));
+  if (opts.sort === 'rating') {
+    // Rated first, best average first; more votes breaks ties; unrated keep newest-first order.
+    const score = (c: RecipeCard) => (c.rating ? [c.rating.average, c.rating.count] : [-1, 0]);
+    cards.sort((a, b) => {
+      const [sa, ca] = score(a);
+      const [sb, cb] = score(b);
+      return sb! - sa! || cb! - ca!;
+    });
+  }
   return { recipes: cards, total: cards.length };
 }
 
@@ -135,7 +147,7 @@ export function getRecipe(db: Db, id: number, { includeDeleted = false } = {}): 
     .get();
   if (!row || (row.deletedAt && !includeDeleted)) return null;
   const { deletedAt: _deleted, ...rest } = row;
-  return { ...rest, tags: tagsFor(db, [id]).get(id) ?? [], collections: collectionsOf(db, id) };
+  return { ...rest, tags: tagsFor(db, [id]).get(id) ?? [], rating: ratingsFor(db, [id]).get(id) ?? null, collections: collectionsOf(db, id) };
 }
 
 /** Rejects unknown tag ids with the list of valid ones, so a form or an AI agent can correct itself. */

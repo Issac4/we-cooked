@@ -98,7 +98,7 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
 
   server.registerTool(
     'get_recipe',
-    { title: 'Get a recipe', description: 'The full recipe: ingredients, steps, tags, collections.', inputSchema: { id: z.number().int() }, annotations: { readOnlyHint: true } },
+    { title: 'Get a recipe', description: 'The full recipe: ingredients, steps, tags, collections, and the household rating (one vote per member).', inputSchema: { id: z.number().int() }, annotations: { readOnlyHint: true } },
     async ({ id }) => run(() => {
       const r = getRecipe(db, id);
       return r ? ok({ ...r, url: recipeUrl(r.id) }) : fail('Recipe not found.');
@@ -248,11 +248,21 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
 
   server.registerTool(
     'add_comment',
-    { title: 'Add a note to a recipe', description: 'A "note from the kitchen": tips, brand advice, what to change next time. Posted as the key’s owner.', inputSchema: { recipeId: z.number().int(), body: z.string().trim().min(1).max(2000) } },
-    async ({ recipeId, body }) =>
+    {
+      title: 'Add a note to a recipe',
+      description:
+        'A "note from the kitchen": tips, brand advice, what to change next time, and optionally a 1–5 rating, shown as hearts. Posted as the key’s owner, so only include a rating the person actually gave; never guess one. Each member’s latest rating counts once in the recipe’s score.',
+      inputSchema: {
+        recipeId: z.number().int(),
+        body: z.string().trim().max(2000).optional().describe('The note; may be empty when only rating'),
+        rating: z.number().int().min(1).max(5).optional().describe('Hearts the person gave, 1–5'),
+      },
+    },
+    async ({ recipeId, body, rating }) =>
       run(() => {
         if (!canWrite) return readOnly();
-        return ok(addComment(db, recipeId, user.id, body));
+        if (!body && !rating) return fail('Give a note, a rating, or both.');
+        return ok(addComment(db, recipeId, user.id, { body: body ?? '', rating: rating ?? null }));
       }),
   );
 

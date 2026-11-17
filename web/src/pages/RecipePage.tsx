@@ -8,6 +8,7 @@ import { api, formError } from '../lib/api';
 import { formatMinutes, recipeKey, useRecipe } from '../lib/recipes';
 import { useMe } from '../lib/session';
 import { Markdown } from '../components/Markdown';
+import { RatingLine } from '../components/Hearts';
 import { RecipePhoto } from '../components/RecipePhoto';
 import { RecipeCollections } from '../components/RecipeCollections';
 import { RecipeNotes } from '../components/RecipeNotes';
@@ -225,6 +226,7 @@ export function RecipePage() {
             <h1 className="text-[34px] leading-[42px] font-bold tracking-tight">{r.title}</h1>
             {r.otherName && <p className="mt-0.5 text-xl text-muted">{r.otherName}</p>}
           </div>
+          {r.rating && <RatingLine rating={r.rating} />}
           {(r.prepMins || r.cookMins) && (
             <div className="flex flex-wrap gap-x-5 gap-y-2 text-ink-2">
               {r.prepMins ? (

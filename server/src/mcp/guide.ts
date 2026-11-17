@@ -73,7 +73,7 @@ export function guide(houseRules: string): string {
 
 ## After creating
 - Tell the user what you added and that it shows "Added by AI · needs review" until a member checks it.
-- Use add_comment for tips that are opinions or experiences rather than steps.
+- Use add_comment for tips that are opinions or experiences rather than steps. Add a 1–5 rating (shown as hearts) only when the person tells you theirs.
 ${houseRules.trim() ? `\n## House rules from the household (these override the above)\n${houseRules.trim()}\n` : ''}
 ## Worked example (tag ids are placeholders; use list_tags)
 \`\`\`json
