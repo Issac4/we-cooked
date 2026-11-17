@@ -6,6 +6,7 @@ import { ME_KEY, useMe } from '../lib/session';
 import { Logo, formatDate } from './ui';
 import { SidebarFilters } from './Filters';
 import { SidebarCollections } from './SidebarCollections';
+import { ThemeSwitch } from './ThemeSwitch';
 
 const navItem = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 no-underline ${
@@ -41,6 +42,7 @@ function Sidebar() {
       <SidebarFilters />
 
       <div className="mt-auto flex flex-col gap-2 border-t border-line pt-4">
+        <ThemeSwitch className="mb-1" />
         {me && (
           <NavLink to="/trash" className={({ isActive }) => `flex items-center gap-2 px-1 text-[13px] no-underline ${isActive ? 'font-semibold text-accent-ink' : 'text-muted hover:text-ink'}`}>
             <Trash2 size={14} aria-hidden="true" /> Trash

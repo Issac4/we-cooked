@@ -3,14 +3,14 @@
 Our household recipe book and meal plan. Self-hosted, one Docker container.
 
 - **Recipes**: name plus optional second name (e.g. Chinese), photo, ingredients in sections that scale with servings, steps split into Preparation and Cooking with timers, source links.
-- **Pill filters** by group (Protein, Meal, Cuisine…; editable), search across names and ingredients.
+- **Pill filters** by group (Protein, Meal, Cuisine…; editable): any pill within a group, all groups together (Beef or Chicken, and Dinner). Search across names and ingredients.
 - **Collections**: themed sets such as "Weeknight" or "CNY".
 - **Notes from the kitchen** on every recipe (brands that worked, tweaks).
 - **Meal plan**: week grid with your own rows, text or linked recipes, add to several days at once, repeat, drag to move (Alt-drag to copy), copy last week, "away" events, red weekends and public holidays, cooking-history dots on each recipe.
 - **Everyone in the household is equal.** People are managed on `/admin` with one shared password.
 - **Guests** (anyone with the link) can read recipes, collections and notes. Only members can change anything or see the meal plan.
 - **AI agents** (Claude Code, Codex CLI, Gemini CLI) can read and add recipes through MCP with a personal API key. What they add is marked for review.
-- Each device signs in once and stays signed in. Installable to the phone home screen. Dark mode follows the device.
+- Each device signs in once and stays signed in. Installable to the phone home screen. Light, Dark or Auto colour mode, chosen per device.
 
 ## Running it on a server
 
