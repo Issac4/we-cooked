@@ -7,6 +7,7 @@ import { api, fieldError, formError } from '../lib/api';
 import { useLogout, useMe, useSetMe } from '../lib/session';
 import { Alert, Button, Card, TextField, relativeDay } from '../components/ui';
 import { ApiKeysCard } from './me/ApiKeysCard';
+import { ThemeSwitch } from '../components/ThemeSwitch';
 
 function UsernameCard() {
   const { me } = useMe();
@@ -132,6 +133,13 @@ export function MePage() {
           Sign out of this device
         </Button>
       </header>
+      <Card className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold">Colour mode</h2>
+          <p className="text-muted">Saved on this device only. Auto follows the device’s own setting.</p>
+        </div>
+        <ThemeSwitch className="w-full sm:w-72" />
+      </Card>
       <UsernameCard />
       <PasswordCard />
       <DevicesCard />

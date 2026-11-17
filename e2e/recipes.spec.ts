@@ -82,8 +82,10 @@ test.describe.serial('recipes', () => {
     await expect(cook.getByRole('link', { name: /Soy Sauce Chicken/ })).toBeVisible();
     await cook.getByRole('complementary').getByRole('button', { name: 'Beef', exact: true }).click();
     await expect(cook.getByText('No recipes match')).toBeVisible();
-    await cook.getByRole('button', { name: 'Clear filters' }).click();
+    // Same group: Beef or Chicken.
     await cook.getByRole('complementary').getByRole('button', { name: 'Chicken', exact: true }).click();
+    await expect(cook.getByRole('link', { name: /Soy Sauce Chicken/ })).toBeVisible();
+    await cook.getByRole('complementary').getByRole('button', { name: 'Beef', exact: true }).click();
     await expect(cook.getByRole('link', { name: /Soy Sauce Chicken/ })).toBeVisible();
     await expect(cook).toHaveURL(/tags=/);
     await cook.getByLabel('Search recipes').fill('豉油');

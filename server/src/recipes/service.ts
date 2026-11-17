@@ -81,10 +81,17 @@ export function listRecipes(db: Db, opts: ListOptions = {}): RecipeList {
   }
   const tagIds = [...new Set(opts.tagIds ?? [])];
   if (tagIds.length) {
-    // Recipes that have every selected tag.
-    where.push(
-      sql`${recipes.id} in (select ${recipeTags.recipeId} from ${recipeTags} where ${inArray(recipeTags.tagId, tagIds)} group by ${recipeTags.recipeId} having count(*) = ${tagIds.length})`,
-    );
+    // Any selected tag within a group (Beef or Chicken), every group that has a selection
+    // (… and Dinner). Unknown ids form their own group, so they match nothing.
+    const groupOf = new Map(db.select({ id: tags.id, groupId: tags.groupId }).from(tags).where(inArray(tags.id, tagIds)).all().map((t) => [t.id, t.groupId]));
+    const byGroup = new Map<string, number[]>();
+    for (const id of tagIds) {
+      const key = groupOf.has(id) ? `g${groupOf.get(id)}` : `t${id}`;
+      byGroup.set(key, [...(byGroup.get(key) ?? []), id]);
+    }
+    for (const ids of byGroup.values()) {
+      where.push(sql`${recipes.id} in (select ${recipeTags.recipeId} from ${recipeTags} where ${inArray(recipeTags.tagId, ids)})`);
+    }
   }
   if (opts.needsReview) where.push(eq(recipes.needsReview, true));
   if (opts.recipeIds) where.push(opts.recipeIds.length ? inArray(recipes.id, opts.recipeIds) : sql`0`);

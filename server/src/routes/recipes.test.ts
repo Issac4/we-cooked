@@ -36,7 +36,7 @@ describe('browsing', () => {
     expect((await guest.post('/api/tags/groups', { name: 'X' })).status).toBe(401);
   });
 
-  it('filters by all selected tags, searches names and ingredients, and sorts', async () => {
+  it('filters by tags, searches names and ingredients, and sorts', async () => {
     const { app } = makeTestApp();
     const { member } = await createMember(app, 'Issac');
     const chicken = await tagId(member, 'Chicken');
@@ -52,6 +52,7 @@ describe('browsing', () => {
     const titles = async (qs: string) => ((await member.get(`/api/recipes?${qs}`)).json.recipes as any[]).map((r) => r.title);
     expect(await titles(`tags=${chicken}`)).toHaveLength(2);
     expect(await titles(`tags=${chicken},${dinner}`)).toEqual(['Soy Sauce Chicken']);
+    expect(await titles(`tags=${chicken},999999`)).toEqual([]);
     expect(await titles('q=congee')).toEqual(['Chicken Congee']);
     expect(await titles('q=雞')).toHaveLength(2);
     expect(await titles('q=fuji')).toEqual(['Apple Tart']);
@@ -62,6 +63,32 @@ describe('browsing', () => {
 
     const card = (await member.get(`/api/recipes?tags=${dinner}`)).json.recipes[0];
     expect(card.tags.map((t: any) => t.name)).toEqual(['Chicken', 'Dinner']);
+  });
+
+  it('matches any tag within a group and every group that has a selection', async () => {
+    const { app } = makeTestApp();
+    const { member } = await createMember(app, 'Issac');
+    const beef = await tagId(member, 'Beef');
+    const chicken = await tagId(member, 'Chicken');
+    const pork = await tagId(member, 'Pork');
+    const lunch = await tagId(member, 'Lunch');
+    const dinner = await tagId(member, 'Dinner');
+    const cantonese = await tagId(member, 'Cantonese');
+    await member.post('/api/recipes', recipeBody({ title: 'Beef Chow Fun', tagIds: [beef, dinner, cantonese] }));
+    await member.post('/api/recipes', recipeBody({ title: 'Chicken Sandwich', tagIds: [chicken, lunch] }));
+    await member.post('/api/recipes', recipeBody({ title: 'Char Siu', tagIds: [pork, dinner, cantonese] }));
+    await member.post('/api/recipes', recipeBody({ title: 'Beef Stew', tagIds: [beef] }));
+
+    const titles = async (ids: number[]) =>
+      ((await member.get(`/api/recipes?sort=title&tags=${ids.join(',')}`)).json.recipes as any[]).map((r) => r.title);
+    // Beef or Chicken
+    expect(await titles([beef, chicken])).toEqual(['Beef Chow Fun', 'Beef Stew', 'Chicken Sandwich']);
+    // (Beef or Chicken) and Dinner
+    expect(await titles([beef, chicken, dinner])).toEqual(['Beef Chow Fun']);
+    // (Beef or Chicken) and (Lunch or Dinner)
+    expect(await titles([beef, chicken, lunch, dinner])).toEqual(['Beef Chow Fun', 'Chicken Sandwich']);
+    // (Beef or Chicken) and (Lunch or Dinner) and Cantonese
+    expect(await titles([beef, chicken, lunch, dinner, cantonese])).toEqual(['Beef Chow Fun']);
   });
 });
 

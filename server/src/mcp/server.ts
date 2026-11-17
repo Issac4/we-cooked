@@ -72,7 +72,7 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
     'search_recipes',
     {
       title: 'Search recipes',
-      description: 'Find recipes by words in either name or in ingredients, optionally filtered by tag ids (all must match) or a collection. Always search before creating.',
+      description: 'Find recipes by words in either name or in ingredients, optionally filtered by tag ids or a collection. Tags in the same group match any (Beef or Chicken); tags from different groups must all match (… and Dinner). Always search before creating.',
       inputSchema: {
         query: z.string().max(100).optional().describe('Words to look for'),
         tagIds: z.array(z.number().int()).max(20).optional(),

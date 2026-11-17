@@ -157,5 +157,13 @@ test.describe.serial('meal plan', () => {
     await phone.getByLabel('Type a dish, or search your recipes').press('Enter');
     await expect(phone.getByRole('group', { name: 'Oatmeal' })).toBeVisible();
     await shot(phone, 'phone-plan');
+
+    // Cooking history opens on the latest weeks (scrolled to the right end).
+    await phone.goto(`/recipes/${recipeId}`);
+    const history = phone.getByTestId('history-scroll');
+    await expect(history).toBeVisible();
+    const pos = await history.evaluate((el) => ({ left: el.scrollLeft, width: el.clientWidth, total: el.scrollWidth }));
+    expect(pos.total).toBeGreaterThan(pos.width);
+    expect(pos.left + pos.width).toBeGreaterThanOrEqual(pos.total - 1);
   });
 });

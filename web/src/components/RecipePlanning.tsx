@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -160,6 +160,18 @@ export function CookingHistory({ recipeId }: { recipeId: number }) {
     return { weeks, cooked: past.length, last: past.at(-1), next: upcoming[0] };
   }, [history.data, today]);
 
+  // On narrow screens open on the latest weeks (the right end); older months are a scroll away.
+  const scroller = useRef<HTMLDivElement>(null);
+  const loaded = !!history.data;
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const toEnd = () => (el.scrollLeft = el.scrollWidth);
+    toEnd();
+    window.addEventListener('orientationchange', toEnd);
+    return () => window.removeEventListener('orientationchange', toEnd);
+  }, [loaded]);
+
   if (history.isPending || history.isError) return null;
   const fmt = (iso: string) => `${dayInfo(iso).dow} ${dayInfo(iso).day} ${dayInfo(iso).month}`;
 
@@ -174,7 +186,7 @@ export function CookingHistory({ recipeId }: { recipeId: number }) {
           {next ? ` · next ${fmt(next)}` : ''}
         </span>
       </div>
-      <div className="overflow-x-auto">
+      <div ref={scroller} data-testid="history-scroll" className="overflow-x-auto">
         <div className="flex w-max flex-col gap-1">
           <div className="flex h-3.5 gap-[3px] pl-[33px] text-[11px] leading-[14px] text-muted" aria-hidden="true">
             {weeks.map((w, i) => (
