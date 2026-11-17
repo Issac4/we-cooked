@@ -137,6 +137,33 @@ export const uploads = sqliteTable('uploads', {
   createdAt: integer('created_at').notNull(),
 });
 
+// ---------- Collections ----------
+
+/** A named set of recipes ("Weeknight 30-min", "CNY 2027"). */
+export const collections = sqliteTable('collections', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  nameKey: text('name_key').notNull().unique(),
+  description: text('description').notNull().default(''),
+  color: text('color').notNull(),
+  createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: integer('created_at').notNull(),
+});
+
+export const recipeCollections = sqliteTable(
+  'recipe_collections',
+  {
+    recipeId: integer('recipe_id')
+      .notNull()
+      .references(() => recipes.id, { onDelete: 'cascade' }),
+    collectionId: integer('collection_id')
+      .notNull()
+      .references(() => collections.id, { onDelete: 'cascade' }),
+    addedAt: integer('added_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.recipeId, t.collectionId] }), index('recipe_collections_collection_idx').on(t.collectionId, t.recipeId)],
+);
+
 /** What happened on /admin and with invites, newest first in the UI. */
 export const adminLog = sqliteTable('admin_log', {
   id: integer('id').primaryKey({ autoIncrement: true }),

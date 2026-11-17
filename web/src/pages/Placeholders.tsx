@@ -17,10 +17,6 @@ export function PlanPage() {
   );
 }
 
-export function CollectionsPage() {
-  return <Soon title="Collections" text="Coming with the collections milestone." />;
-}
-
 export function NotFound() {
   return <Soon title="Page not found" text="That page does not exist." />;
 }

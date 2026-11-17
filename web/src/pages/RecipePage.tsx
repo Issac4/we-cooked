@@ -9,6 +9,7 @@ import { formatMinutes, recipeKey, useRecipe } from '../lib/recipes';
 import { useMe } from '../lib/session';
 import { Markdown } from '../components/Markdown';
 import { RecipePhoto } from '../components/RecipePhoto';
+import { RecipeCollections } from '../components/RecipeCollections';
 import { Alert, Button, formatDate } from '../components/ui';
 
 function Ingredients({ recipe }: { recipe: Recipe }) {
@@ -245,6 +246,7 @@ export function RecipePage() {
               ))}
             </div>
           )}
+          <RecipeCollections recipe={r} />
           {r.description && (
             <div className="text-ink-2">
               <Markdown>{r.description}</Markdown>

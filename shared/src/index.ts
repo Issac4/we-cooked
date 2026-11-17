@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export * from './auth.js';
 export * from './recipes.js';
+export * from './collections.js';
 
 export const APP_NAME = 'We Cooked';
 

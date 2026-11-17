@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CollectionRef } from './collections.js';
 
 // ---------- Quantities ----------
 
@@ -132,6 +133,7 @@ export const RecipeList = z.object({ recipes: z.array(RecipeCard), total: z.numb
 export type RecipeList = z.infer<typeof RecipeList>;
 
 export const Recipe = RecipeCard.extend({
+  collections: z.array(CollectionRef),
   description: z.string(),
   ingredients: z.array(IngredientSection),
   steps: z.array(Step),

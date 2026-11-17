@@ -13,6 +13,7 @@ import {
 import type { Db } from '../db/index.js';
 import { recipes, recipeTags, tagGroups, tags, uploads, users } from '../db/schema.js';
 import { HttpError } from '../http.js';
+import { collectionsOf } from '../routes/collections.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -122,7 +123,7 @@ export function getRecipe(db: Db, id: number, { includeDeleted = false } = {}): 
     .get();
   if (!row || (row.deletedAt && !includeDeleted)) return null;
   const { deletedAt: _deleted, ...rest } = row;
-  return { ...rest, tags: tagsFor(db, [id]).get(id) ?? [] };
+  return { ...rest, tags: tagsFor(db, [id]).get(id) ?? [], collections: collectionsOf(db, id) };
 }
 
 /** Rejects unknown tag ids with the list of valid ones, so a form or an AI agent can correct itself. */

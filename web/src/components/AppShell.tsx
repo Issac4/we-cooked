@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { ME_KEY, useMe } from '../lib/session';
 import { Logo, formatDate } from './ui';
 import { SidebarFilters } from './Filters';
+import { SidebarCollections } from './SidebarCollections';
 
 const navItem = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 no-underline ${
@@ -36,7 +37,7 @@ function Sidebar() {
         )}
       </nav>
 
-      {/* Collections arrive with their milestone. */}
+      <SidebarCollections />
       <SidebarFilters />
 
       <div className="mt-auto flex flex-col gap-2 border-t border-line pt-4">

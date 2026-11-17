@@ -9,6 +9,7 @@ import type { Db } from './db/index.js';
 import type { AppEnv } from './env.js';
 import { errorResponse, HttpError, loadSession, sameOrigin } from './http.js';
 import { adminRoutes } from './routes/admin.js';
+import { collectionRoutes } from './routes/collections.js';
 import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
 import { linkPreviewRoutes, recipeRoutes, trashRoutes } from './routes/recipes.js';
@@ -51,6 +52,7 @@ export function createApp({ config, db }: AppDeps) {
   api.route('/tags', tagRoutes());
   api.route('/recipes', recipeRoutes());
   api.route('/trash', trashRoutes());
+  api.route('/collections', collectionRoutes());
   api.route('/uploads', uploadRoutes());
   api.route('/link-preview', linkPreviewRoutes());
 

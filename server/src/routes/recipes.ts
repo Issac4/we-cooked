@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { RECIPE_SORTS, RecipeInput, RecipeUpdate, type LinkPreview, type RecipeSort } from '@wecooked/shared';
 import type { AppEnv } from '../env.js';
 import { HttpError, parseBody, requireMember } from '../http.js';
+import { recipeIdsIn } from './collections.js';
 import {
   createRecipe,
   getRecipe,
@@ -30,7 +31,14 @@ export function recipeRoutes() {
       .split(',')
       .map(Number)
       .filter((n) => Number.isInteger(n) && n > 0);
-    return c.json(listRecipes(c.var.db, { q: c.req.query('q'), tagIds, sort }));
+    const collection = Number(c.req.query('collection') ?? 0);
+    let recipeIds: number[] | undefined;
+    if (collection) {
+      const ids = recipeIdsIn(c.var.db, collection);
+      if (!ids) throw new HttpError(404, 'Collection not found');
+      recipeIds = ids;
+    }
+    return c.json(listRecipes(c.var.db, { q: c.req.query('q'), tagIds, sort, recipeIds }));
   });
 
   app.get('/:id{[0-9]+}', (c) => {

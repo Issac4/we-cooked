@@ -41,15 +41,16 @@ export function useRecipeFilters() {
     [params],
   );
   const q = params.get('q') ?? '';
+  const collection = Number(params.get('collection') ?? 0) || null;
   const sortParam = params.get('sort') ?? 'new';
   const sort: RecipeSort = (RECIPE_SORTS as readonly string[]).includes(sortParam) ? (sortParam as RecipeSort) : 'new';
 
   const update = useCallback(
-    (change: (p: URLSearchParams) => void) => {
+    (change: (p: URLSearchParams) => void, push = false) => {
       const next = new URLSearchParams(location.pathname === '/' ? params : undefined);
       change(next);
       for (const [k, v] of [...next.entries()]) if (!v) next.delete(k);
-      if (location.pathname === '/') setParams(next, { replace: true });
+      if (location.pathname === '/') setParams(next, { replace: !push });
       else navigate(`/?${next.toString()}`);
     },
     [location.pathname, navigate, params, setParams],
@@ -67,21 +68,30 @@ export function useRecipeFilters() {
     tags,
     q,
     sort,
+    collection,
     hasFilters: tags.length > 0 || q.trim().length > 0,
     toggleTag,
     setQuery: (value: string) => update((p) => p.set('q', value)),
     setSort: (value: RecipeSort) => update((p) => p.set('sort', value === 'new' ? '' : value)),
+    /** Clears pills and search; stays inside the current collection. */
     clear: () =>
       update((p) => {
         p.delete('tags');
         p.delete('q');
       }),
+    /** Opens a collection (or All recipes with null), keeping pills and search. */
+    setCollection: (id: number | null) => update((p) => p.set('collection', id ? String(id) : ''), true),
   };
 }
 
+/** Every recipe, for pickers. */
+export function useAllRecipes(enabled = true) {
+  return useQuery({ queryKey: recipesKey({ all: true }), queryFn: () => api.get('/recipes?sort=title', RecipeList), enabled });
+}
+
 export function useRecipeList() {
-  const { tags, q, sort } = useRecipeFilters();
-  const params = { tags: tags.join(','), q: q.trim(), sort };
+  const { tags, q, sort, collection } = useRecipeFilters();
+  const params = { tags: tags.join(','), q: q.trim(), sort, collection: collection ? String(collection) : '' };
   return useQuery({
     queryKey: recipesKey(params),
     queryFn: () => {
