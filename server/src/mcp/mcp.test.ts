@@ -142,7 +142,7 @@ describe('MCP', () => {
     const near = await call('create_tag', { groupId: protein, name: 'Chickens' });
     expect(near.isError).toBe(true);
     expect(near.text).toMatch(/Similar tags already exist: Chicken/);
-    expect((await call('create_tag', { groupId: protein, name: 'Lamb' })).json.name).toBe('Lamb');
+    expect((await call('create_tag', { groupId: protein, name: 'Goose' })).json.name).toBe('Goose');
   });
 
   it('read-only keys can look but not change', async () => {
