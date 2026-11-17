@@ -1,32 +1,30 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-
-# Project specific
+# Dependencies and build output
 node_modules/
-frontend/node_modules/
-frontend/dist/
-frontend/playwright-report/
-frontend/test-results/
-app/static/uploads/*
-!app/static/uploads/.gitkeep
-GEMINI.md
+dist/
+.vite/
+*.tsbuildinfo
 
-# IDEs & Tools
+# Local data (SQLite database, uploaded photos)
+data/
+
+# Secrets and local overrides
+.env
+.env.*
+!.env.example
+docker-compose.prod.yml
+
+# Test output
+playwright-report/
+test-results/
+coverage/
+
+# Leftovers from v1 (code lives on the legacy/v1 branch)
+app/
+frontend/
+
+# Local tool files
+GEMINI.md
 .vscode/
 .idea/
 .antigravitycli/
 .DS_Store
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/

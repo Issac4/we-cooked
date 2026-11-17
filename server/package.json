@@ -1,0 +1,30 @@
+{
+  "name": "@wecooked/server",
+  "version": "2.0.0-dev",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "PORT=${DEV_API_PORT:-8787} tsx watch --env-file-if-exists=../.env src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.8",
+    "@wecooked/shared": "*",
+    "better-sqlite3": "13.2.0",
+    "drizzle-orm": "0.45.4",
+    "hono": "4.13.19",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "@types/node": "26.6.6",
+    "drizzle-kit": "0.31.11",
+    "tsup": "9.0.0",
+    "tsx": "4.23.15",
+    "vitest": "5.1.0"
+  }
+}
