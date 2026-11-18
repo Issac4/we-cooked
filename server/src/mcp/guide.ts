@@ -7,7 +7,8 @@ export function instructions(houseRules: string): string {
     'Workflow for adding a recipe:',
     '1. search_recipes first. If it already exists, use get_recipe + update_recipe instead of creating a copy.',
     '2. list_tags and use only existing tag ids. Do not invent tags; only call create_tag if one is clearly missing and the user agreed.',
-    '3. create_recipe with steps split into "preparation" and "cooking", and structured ingredients (numeric quantity, short unit, name, note).',
+    '3. Show the user the recipe you are about to add (title, tags, ingredients, steps) and wait for their OK before calling create_recipe. Skip this only if the user has clearly said to import directly without review.',
+    '4. create_recipe with steps split into "preparation" and "cooking", and structured ingredients (numeric quantity, short unit, name, note).',
     'Ingredient notes are only a short description of the item ("diced", "about 1.4 kg"). Anything to DO (wash, soak, cut, reserve) goes in a preparation step. If a result has warnings, fix them with update_recipe.',
     'Notes and ratings: the Notes under a recipe are for tips, how it turned out and what to change next time. get_recipe shows them; read them first. Add one with add_comment. Add a rating (hearts, 1–5) only when the person told you theirs, never a guess. A fix to the method itself goes in update_recipe, not in a note.',
     'To suggest what to cook, search_recipes shows rating, times cooked and last cooked, and can sort by highest_rated or not_cooked_lately.',
@@ -54,6 +55,7 @@ export function guide(houseRules: string): string {
   return `# How to write recipes for We Cooked
 
 ## Before creating anything
+- Let the user review first. Show the draft recipe in plain language (title, tags, servings, ingredients, preparation and cooking steps, source link) and ask if it is good to add. Only call create_recipe after they agree, applying any changes they ask for. The exception: the user clearly said to import directly with no review (e.g. "just import it", "no need to check"). One such instruction covers that request only, not later ones, unless they say it applies to all.
 - search_recipes with the dish name (English and the other language). If a match exists, update it instead.
 - list_tags and pick tag ids from the existing groups (e.g. Protein, Meal, Cuisine). Never invent ids.
 - Only call create_tag when a tag is clearly missing AND the user agreed. It refuses near-duplicates unless confirmNew is true.

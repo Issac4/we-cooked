@@ -88,6 +88,7 @@ describe('MCP', () => {
     await member.patch('/api/settings', { aiRules: 'Titles in English, Chinese name as the other name.' });
     const { client, call } = await connect(app, await newKey(member));
     expect(client.getInstructions()).toMatch(/search_recipes first/);
+    expect(client.getInstructions()).toMatch(/wait for their OK before calling create_recipe/);
     expect(client.getInstructions()).toMatch(/Titles in English/);
     const names = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(names).toEqual([

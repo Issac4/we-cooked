@@ -172,7 +172,7 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
     'create_recipe',
     {
       title: 'Create a recipe',
-      description: 'Add a new recipe. Search first. Steps need section "preparation" or "cooking"; ingredients need numeric quantities. Ingredient notes only describe the item ("diced", "about 1.4 kg"); anything to DO (wash, soak, cut, reserve) goes in a preparation step. The result may include warnings to fix. Refuses names or source links similar to existing recipes unless confirmNew is true. The recipe is marked "needs review".',
+      description: 'Add a new recipe. Show the user the draft and get their OK first, unless they clearly said to import directly without review. Search first. Steps need section "preparation" or "cooking"; ingredients need numeric quantities. Ingredient notes only describe the item ("diced", "about 1.4 kg"); anything to DO (wash, soak, cut, reserve) goes in a preparation step. The result may include warnings to fix. Refuses names or source links similar to existing recipes unless confirmNew is true. The recipe is marked "needs review".',
       inputSchema: { recipe: AgentRecipe, confirmNew: z.boolean().optional().describe('Set true only after checking the similar recipes are really different dishes') },
     },
     async ({ recipe, confirmNew }) =>
