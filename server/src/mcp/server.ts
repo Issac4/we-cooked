@@ -1,10 +1,10 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { IsoDate, RecipeInput, TagName, usernameKey as nameKey } from '@wecooked/shared';
 import type { Db } from '../db/index.js';
-import { planRows, recipes, tagGroups, tags } from '../db/schema.js';
+import { planEntries, planRows, recipes, tagGroups, tags } from '../db/schema.js';
 import type { CurrentApiKey, CurrentUser } from '../env.js';
 import { HttpError } from '../http.js';
 import { createRecipe, getRecipe, listRecipes, setCoverPhoto, updateRecipe } from '../recipes/service.js';
@@ -12,11 +12,12 @@ import { fetchImage } from '../photos/fetch-image.js';
 import { createPhotoDrop } from '../photos/photo-drop.js';
 import { saveImage } from '../routes/uploads.js';
 import { addToCollection, listCollections, recipeIdsIn } from '../routes/collections.js';
-import { addComment } from '../routes/comments.js';
+import { addComment, listComments } from '../routes/comments.js';
 import { addEntries, planView } from '../routes/plan.js';
 import { getSettings } from '../routes/settings.js';
 import { listTagGroups } from '../routes/tags.js';
 import { guide, instructions } from './guide.js';
+import { recipeWarnings } from './lint.js';
 import { isSimilar } from './similar.js';
 
 const ok = (data: unknown): CallToolResult => ({ content: [{ type: 'text', text: typeof data === 'string' ? data : JSON.stringify(data, null, 2) }] });
@@ -43,6 +44,21 @@ function validTagsMessage(db: Db): string {
   return listTagGroups(db)
     .map((g) => `${g.name}: ${g.tags.map((t) => `${t.name} (${t.id})`).join(', ')}`)
     .join('\n');
+}
+
+/** How often and when each recipe was cooked: meal-plan entries up to today. */
+function cookedStats(db: Db, ids: number[]): Map<number, { times: number; last: string }> {
+  const out = new Map<number, { times: number; last: string }>();
+  if (!ids.length) return out;
+  const today = new Date().toISOString().slice(0, 10);
+  const rows = db
+    .select({ recipeId: planEntries.recipeId, times: sql<number>`count(*)`, last: sql<string>`max(${planEntries.date})` })
+    .from(planEntries)
+    .where(and(inArray(planEntries.recipeId, ids), lte(planEntries.date, today)))
+    .groupBy(planEntries.recipeId)
+    .all();
+  for (const r of rows) if (r.recipeId !== null) out.set(r.recipeId, { times: r.times, last: r.last });
+  return out;
 }
 
 export interface McpContext {
@@ -72,15 +88,17 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
     'search_recipes',
     {
       title: 'Search recipes',
-      description: 'Find recipes by words in either name or in ingredients, optionally filtered by tag ids or a collection. Tags in the same group match any (Beef or Chicken); tags from different groups must all match (… and Dinner). Always search before creating.',
+      description:
+        'Find recipes by words in either name or in ingredients, optionally filtered by tag ids or a collection. Tags in the same group match any (Beef or Chicken); tags from different groups must all match (… and Dinner). Each result has the household rating (hearts, 1–5), how many times it was cooked (from the meal plan) and the last cooked date. Use sort for suggestions: "highest_rated" for favourites, "not_cooked_lately" for dishes that have not been made for a while (never-cooked first). Always search before creating.',
       inputSchema: {
         query: z.string().max(100).optional().describe('Words to look for'),
         tagIds: z.array(z.number().int()).max(20).optional(),
         collectionId: z.number().int().optional(),
+        sort: z.enum(['title', 'newest', 'highest_rated', 'not_cooked_lately']).optional().describe('Default title'),
       },
       annotations: { readOnlyHint: true },
     },
-    async ({ query, tagIds, collectionId }) =>
+    async ({ query, tagIds, collectionId, sort }) =>
       run(() => {
         let recipeIds: number[] | undefined;
         if (collectionId) {
@@ -88,20 +106,34 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
           if (!ids) return fail('Collection not found. Use list_collections.');
           recipeIds = ids;
         }
-        const { recipes: found } = listRecipes(db, { q: query, tagIds, recipeIds, sort: 'title' });
-        return ok({
-          count: found.length,
-          recipes: found.slice(0, 50).map((r) => ({ id: r.id, title: r.title, otherName: r.otherName, tags: r.tags.map((t) => t.name), needsReview: r.needsReview })),
-        });
+        const { recipes: found } = listRecipes(db, { q: query, tagIds, recipeIds, sort: sort === 'newest' ? 'new' : sort === 'highest_rated' ? 'rating' : 'title' });
+        const cooked = cookedStats(db, found.map((r) => r.id));
+        const rows = found.map((r) => ({
+          id: r.id,
+          title: r.title,
+          otherName: r.otherName,
+          tags: r.tags.map((t) => t.name),
+          rating: r.rating ? { hearts: r.rating.average, votes: r.rating.count } : null,
+          timesCooked: cooked.get(r.id)?.times ?? 0,
+          lastCooked: cooked.get(r.id)?.last ?? null,
+          needsReview: r.needsReview,
+        }));
+        if (sort === 'not_cooked_lately') {
+          // Never cooked first, then the longest ago.
+          rows.sort((a, b) => (a.lastCooked ?? '').localeCompare(b.lastCooked ?? ''));
+        }
+        return ok({ count: rows.length, recipes: rows.slice(0, 50) });
       }),
   );
 
   server.registerTool(
     'get_recipe',
-    { title: 'Get a recipe', description: 'The full recipe: ingredients, steps, tags, collections, and the household rating (one vote per member).', inputSchema: { id: z.number().int() }, annotations: { readOnlyHint: true } },
+    { title: 'Get a recipe', description: 'The full recipe: ingredients, steps, tags, collections, the household rating (one vote per member) and the notes members have left (tips, changes for next time, who gave which hearts). Read the notes before editing or adding a note so you do not repeat or contradict them.', inputSchema: { id: z.number().int() }, annotations: { readOnlyHint: true } },
     async ({ id }) => run(() => {
       const r = getRecipe(db, id);
-      return r ? ok({ ...r, url: recipeUrl(r.id) }) : fail('Recipe not found.');
+      if (!r) return fail('Recipe not found.');
+      const notes = listComments(db, r.id, user.id).map((c) => ({ author: c.author, date: new Date(c.createdAt).toISOString().slice(0, 10), rating: c.rating, note: c.body }));
+      return ok({ ...r, notes, url: recipeUrl(r.id) });
     }),
   );
 
@@ -140,7 +172,7 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
     'create_recipe',
     {
       title: 'Create a recipe',
-      description: 'Add a new recipe. Search first. Steps need section "preparation" or "cooking"; ingredients need numeric quantities. Refuses names or source links similar to existing recipes unless confirmNew is true. The recipe is marked "needs review".',
+      description: 'Add a new recipe. Show the user the draft and get their OK first, unless they clearly said to import directly without review. Search first. Steps need section "preparation" or "cooking"; ingredients need numeric quantities. Ingredient notes only describe the item ("diced", "about 1.4 kg"); anything to DO (wash, soak, cut, reserve) goes in a preparation step. The result may include warnings to fix. Refuses names or source links similar to existing recipes unless confirmNew is true. The recipe is marked "needs review".',
       inputSchema: { recipe: AgentRecipe, confirmNew: z.boolean().optional().describe('Set true only after checking the similar recipes are really different dishes') },
     },
     async ({ recipe, confirmNew }) =>
@@ -166,7 +198,13 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
         const unknown = recipe.tagIds.filter((id) => !known.has(id));
         if (unknown.length) return fail(`Unknown tag id(s): ${unknown.join(', ')}. Valid tags:\n${validTagsMessage(db)}`);
         const created = createRecipe(db, { ...recipe, coverPhoto: null }, actor);
-        return ok({ id: created.id, url: recipeUrl(created.id), message: 'Created. It shows "Added by AI · needs review" until a member checks it.' });
+        const warnings = recipeWarnings(recipe);
+        return ok({
+          id: created.id,
+          url: recipeUrl(created.id),
+          message: 'Created. It shows "Added by AI · needs review" until a member checks it.',
+          ...(warnings.length ? { warnings, action: 'Fix these with update_recipe now, before telling the user it is done.' } : {}),
+        });
       }),
   );
 
@@ -174,7 +212,7 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
     'update_recipe',
     {
       title: 'Update a recipe',
-      description: 'Replace a recipe’s content (call get_recipe first and send the whole recipe back with your changes). The cover photo is kept. Marks it "needs review".',
+      description: 'Replace a recipe’s content (call get_recipe first and send the whole recipe back with your changes; leave out the notes field). The cover photo is kept. Marks it "needs review". Same rule as create_recipe: instructions belong in steps, not ingredient notes.',
       inputSchema: { id: z.number().int(), recipe: AgentRecipe },
     },
     async ({ id, recipe }) =>
@@ -186,7 +224,13 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
         const unknown = recipe.tagIds.filter((t) => !known.has(t));
         if (unknown.length) return fail(`Unknown tag id(s): ${unknown.join(', ')}. Valid tags:\n${validTagsMessage(db)}`);
         updateRecipe(db, id, { ...recipe, coverPhoto: current.coverPhoto }, actor);
-        return ok({ id, url: recipeUrl(id), message: 'Updated and marked for review.' });
+        const warnings = recipeWarnings(recipe);
+        return ok({
+          id,
+          url: recipeUrl(id),
+          message: 'Updated and marked for review.',
+          ...(warnings.length ? { warnings, action: 'Fix these with update_recipe now, before telling the user it is done.' } : {}),
+        });
       }),
   );
 
@@ -251,7 +295,7 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpCont
     {
       title: 'Add a note to a recipe',
       description:
-        'A "note from the kitchen": tips, brand advice, what to change next time, and optionally a 1–5 rating, shown as hearts. Posted as the key’s owner, so only include a rating the person actually gave; never guess one. Each member’s latest rating counts once in the recipe’s score.',
+        'A "note from the kitchen" in the recipe’s Notes: tips, brand advice, how it turned out, what to change next time, and optionally a 1–5 rating shown as hearts. Posted as the key’s owner, so only include a rating the person actually gave; never guess one. Each member’s latest rating counts once in the recipe’s score. If the change is to the method itself, use update_recipe instead. Read the existing notes with get_recipe first.',
       inputSchema: {
         recipeId: z.number().int(),
         body: z.string().trim().max(2000).optional().describe('The note; may be empty when only rating'),
