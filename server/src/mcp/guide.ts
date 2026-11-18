@@ -102,6 +102,7 @@ Every recipe has Notes (a thread of "notes from the kitchen"). get_recipe return
 - Check get_meal_plan before suggesting, and do not suggest what is already planned or an "away" day. Use add_plan_entry only when the person agreed.
 ${houseRules.trim() ? `\n## House rules from the household (these override the above)\n${houseRules.trim()}\n` : ''}
 ## Worked example (tag ids are placeholders; use list_tags)
+The example shows the structure only. Its languages are illustrative: the titles, names, steps and notes must follow the house rules above where they say otherwise.
 \`\`\`json
 ${JSON.stringify(EXAMPLE, null, 2)}
 \`\`\`
