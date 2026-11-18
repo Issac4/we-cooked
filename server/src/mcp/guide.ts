@@ -40,11 +40,11 @@ const EXAMPLE: Omit<RecipeInput, 'coverPhoto'> = {
     },
   ],
   steps: [
-    { section: 'preparation', title: 'Bring to room temperature', text: 'Take the chicken out 30 minutes ahead. Pat dry inside and out.', timerMins: null },
-    { section: 'preparation', title: 'Make the braising liquid', text: 'Combine both soy sauces, rock sugar, ginger and spring onion in a pot just big enough for the chicken.', timerMins: null },
-    { section: 'cooking', title: 'Simmer', text: 'Bring to a boil, lower the chicken in breast-side down and simmer on **low** heat.', timerMins: 15 },
-    { section: 'cooking', title: 'Rest in the pot', text: 'Flip, simmer 10 more minutes, then turn off the heat and leave covered.', timerMins: 20 },
-    { section: 'cooking', title: 'Chop and serve', text: 'Chop and spoon some sauce over.', timerMins: null },
+    { section: 'preparation', title: 'Bring to room temperature', text: '* Take the chicken out of the fridge 30 minutes ahead\n* Pat dry inside and out', timerMins: null },
+    { section: 'preparation', title: 'Make the braising liquid', text: '* Use a pot just big enough for the chicken\n* Combine both soy sauces, rock sugar, ginger and spring onion', timerMins: null },
+    { section: 'cooking', title: 'Simmer', text: '* Bring the liquid to a boil\n* Lower the chicken in breast-side down and simmer on **low** heat', timerMins: 15 },
+    { section: 'cooking', title: 'Rest in the pot', text: '* Flip the chicken and simmer 10 more minutes\n* Turn off the heat and leave covered', timerMins: 20 },
+    { section: 'cooking', title: 'Chop and serve', text: '* Chop the chicken\n* Spoon some sauce over', timerMins: null },
   ],
   links: [{ url: 'https://www.youtube.com/watch?v=EXAMPLE', title: 'Original video' }],
   tagIds: [1, 9, 15],
@@ -62,19 +62,19 @@ export function guide(houseRules: string): string {
 - create_recipe refuses a recipe whose name or source link looks like an existing one; pass confirmNew: true only if it is really different.
 
 ## Fields
-- title: the main name. otherName: optional second name (e.g. Chinese), searched too.
+- title: the main name, in the language the household uses for it (Chinese for a Chinese dish). otherName: optional second name (e.g. the English name), searched too.
 - servings: whole number the amounts are for. prepMins / cookMins: whole minutes.
 - ingredients: sections; use one section with name "" for the main list, and extra named sections for "Marinade", "Sauce", etc.
-  Each item: quantity as a number (0.5, not "1/2"; null when not measured), unit short ("g", "ml", "tbsp", "tsp", "cloves", "slices", "pcs"; "a pinch" goes in unit with quantity null), name (the ingredient only), note (see below).
+  Each item: quantity as a number (0.5, not "1/2"; null when not measured), unit short ("g", "ml", "tbsp", "tsp", "cloves", "slices", "pcs"; for "to taste" or "a pinch" use quantity null and put the words in unit, e.g. "to taste" / 適量), name (the ingredient only), note (see below).
 - ingredient notes: a few words that describe the item: its size, state or brand ("about 1.4 kg", "diced", "Lee Kum Kee", "room temperature").
   Never put an instruction there. Anything the cook has to DO (wash, soak, drain, peel, cut, "keep the white part for the soup", "start with this much water") is a step.
   - Wrong: { name: "glutinous rice", note: "rinse, soak 1 hour then drain" } and { name: "spring onion", note: "keep 1 stalk for the soup, chop the rest" }
   - Right: note "dry weight" on the rice and no note on the spring onion; then a preparation step "Rinse the rice, soak for 1 hour (timerMins: 60) and drain" and another "Separate the white of 1 spring onion for the soup; chop the rest".
   Every item in a recipe's ingredients should also appear in a step, so the steps alone can be followed.
 - steps: every step has section "preparation" (before heat: washing, cutting, marinating, mixing sauces) or "cooking" (on the heat, resting, assembling, serving).
-  Keep each step to one stage. Put waiting or cooking times in timerMins (minutes; fractions allowed, e.g. 0.5 = 30 seconds). Markdown (**bold**, lists) is allowed in text.
+  Write the text as short bullet points ("* ..." one action per line), like the household's hand-written recipes: a short title for the stage, then the actions. Explain a "why" or tip in brackets after the bullet it belongs to, or in **bold** for a warning (e.g. "**Tip: do not overbeat, or the egg turns tough**"). Keep each step to one stage. Put waiting or cooking times in timerMins (minutes; fractions allowed, e.g. 0.5 = 30 seconds). Markdown (**bold**, lists) is allowed in text.
 - links: the original source URL(s) with a short title.
-- description: one or two sentences, optional.
+- description: optional and short (one or two sentences). Leaving it empty is fine; do not repeat what the steps say.
 
 ## Photos
 - After create_recipe, add a cover photo if you have one:

@@ -12,7 +12,7 @@ const INSTRUCTION = /(\bthen\b|\buntil\b|\bset aside\b|\breserve\b|\bsoak\b|\bdr
 export function noteLooksLikeStep(note: string): boolean {
   const n = note.trim();
   if (!n) return false;
-  return weight(n) > 28 || /[;；。]/.test(n) || /\.\s+\S/.test(n) || INSTRUCTION.test(n);
+  return weight(n) > 28 || /。/.test(n) || /\.\s+\S/.test(n) || INSTRUCTION.test(n);
 }
 
 /**

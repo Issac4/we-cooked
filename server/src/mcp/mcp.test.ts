@@ -153,6 +153,7 @@ describe('MCP', () => {
     expect((await call('update_recipe', { id: bad.json.id, recipe: withNote('dry weight') })).json.warnings).toBeUndefined();
     expect((await call('update_recipe', { id: bad.json.id, recipe: withNote('洗淨浸1小時後瀝乾') })).json.warnings).toHaveLength(1);
     expect((await call('update_recipe', { id: bad.json.id, recipe: withNote('diced') })).json.warnings).toBeUndefined();
+    expect((await call('update_recipe', { id: bad.json.id, recipe: withNote('3-4 塊；西冷，或梅肉') })).json.warnings).toBeUndefined();
 
     // Notes are readable, with who gave which hearts.
     await call('add_comment', { recipeId: bad.json.id, body: 'Less salt next time', rating: 4 });
