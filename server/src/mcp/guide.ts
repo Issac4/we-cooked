@@ -62,7 +62,7 @@ export function guide(houseRules: string): string {
 - create_recipe refuses a recipe whose name or source link looks like an existing one; pass confirmNew: true only if it is really different.
 
 ## Fields
-- title: the main name, in the language the household uses for it (Chinese for a Chinese dish). otherName: optional second name (e.g. the English name), searched too.
+- title: the main name. otherName: optional second name (e.g. a name in another language), searched too. Which language each goes in is up to the household rules below.
 - servings: whole number the amounts are for. prepMins / cookMins: whole minutes.
 - ingredients: sections; use one section with name "" for the main list, and extra named sections for "Marinade", "Sauce", etc.
   Each item: quantity as a number (0.5, not "1/2"; null when not measured), unit short ("g", "ml", "tbsp", "tsp", "cloves", "slices", "pcs"; for "to taste" or "a pinch" use quantity null and put the words in unit, e.g. "to taste" / 適量), name (the ingredient only), note (see below).
@@ -72,9 +72,10 @@ export function guide(houseRules: string): string {
   - Right: note "dry weight" on the rice and no note on the spring onion; then a preparation step "Rinse the rice, soak for 1 hour (timerMins: 60) and drain" and another "Separate the white of 1 spring onion for the soup; chop the rest".
   Every item in a recipe's ingredients should also appear in a step, so the steps alone can be followed.
 - steps: every step has section "preparation" (before heat: washing, cutting, marinating, mixing sauces) or "cooking" (on the heat, resting, assembling, serving).
-  Write the text as short bullet points ("* ..." one action per line), like the household's hand-written recipes: a short title for the stage, then the actions. Explain a "why" or tip in brackets after the bullet it belongs to, or in **bold** for a warning (e.g. "**Tip: do not overbeat, or the egg turns tough**"). Keep each step to one stage. Put waiting or cooking times in timerMins (minutes; fractions allowed, e.g. 0.5 = 30 seconds). Markdown (**bold**, lists) is allowed in text.
+  Each step is one clear stage with a short title that names it (e.g. "Marinate the pork", "Fry the onion"), and its text is short bullet points ("* ..." one action per line). Explain a "why" or tip in brackets after the bullet it belongs to, or in **bold** for a warning (e.g. "**Tip: do not overbeat, or the egg turns tough**").
+  How small to split: a step is a stage a cook would name out loud, not a single movement. Aim for roughly 2–5 preparation steps and 2–5 cooking steps, and 2–6 bullets per step. Split into a new step when the work changes (marinating vs. cutting vegetables) or when there is a wait or a different heat; do not make a step for each knife cut. If a bullet only says "then do the next thing", it belongs in the same step as its neighbour. Put waiting or cooking times in timerMins (minutes; fractions allowed, e.g. 0.5 = 30 seconds). Markdown (**bold**, lists) is allowed in text.
 - links: the original source URL(s) with a short title.
-- description: optional and short (one or two sentences). Leaving it empty is fine; do not repeat what the steps say.
+- description: one or two short sentences saying what the dish is and what is special about it. Do not repeat what the steps say.
 
 ## Photos
 - After create_recipe, add a cover photo if you have one:
