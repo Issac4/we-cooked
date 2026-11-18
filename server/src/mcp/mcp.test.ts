@@ -135,6 +135,41 @@ describe('MCP', () => {
     expect(found.recipes.map((r: any) => r.title)).toEqual(['Tomato and Egg Stir-fry']);
   });
 
+  it('warns when an ingredient note reads like a step, and shows notes and cooking stats to the agent', async () => {
+    const { app } = makeTestApp();
+    const { member } = await createMember(app, 'Issac');
+    const { call } = await connect(app, await newKey(member));
+    const base = agentRecipe() as any;
+    const withNote = (note: string) => ({
+      ...base,
+      title: 'Warn test',
+      ingredients: [{ name: '', items: [{ quantity: 6, unit: 'tbsp', name: 'rice', note }, { quantity: 1, unit: '', name: 'salt', note: '' }] }],
+    });
+
+    const bad = await call('create_recipe', { recipe: withNote('rinse, soak 1 hour then drain') });
+    expect(bad.isError).toBe(false);
+    expect(bad.json.warnings[0]).toMatch(/note on "rice".*preparation/);
+    expect((await call('update_recipe', { id: bad.json.id, recipe: withNote('dry weight') })).json.warnings).toBeUndefined();
+    expect((await call('update_recipe', { id: bad.json.id, recipe: withNote('洗淨浸1小時後瀝乾') })).json.warnings).toHaveLength(1);
+    expect((await call('update_recipe', { id: bad.json.id, recipe: withNote('diced') })).json.warnings).toBeUndefined();
+
+    // Notes are readable, with who gave which hearts.
+    await call('add_comment', { recipeId: bad.json.id, body: 'Less salt next time', rating: 4 });
+    const got = (await call('get_recipe', { id: bad.json.id })).json;
+    expect(got.notes).toEqual([{ author: 'Issac', date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), rating: 4, note: 'Less salt next time' }]);
+
+    // Search shows hearts and how often it was cooked (past plan days only).
+    await call('add_plan_entry', { dates: ['2020-01-01', '2020-02-01'], row: 'Dinner', recipeId: bad.json.id });
+    await call('add_plan_entry', { dates: ['2999-01-01'], row: 'Dinner', recipeId: bad.json.id });
+    const other = await call('create_recipe', { recipe: { ...withNote('diced'), title: 'Never cooked dish' }, confirmNew: true });
+    const found = (await call('search_recipes', { sort: 'not_cooked_lately' })).json.recipes;
+    expect(found.map((r: any) => r.title)).toEqual(['Never cooked dish', 'Warn test']);
+    expect(found[1]).toMatchObject({ rating: { hearts: 4, votes: 1 }, timesCooked: 2, lastCooked: '2020-02-01' });
+    expect(other.isError).toBe(false);
+    const best = (await call('search_recipes', { sort: 'highest_rated' })).json.recipes;
+    expect(best[0].title).toBe('Warn test');
+  });
+
   it('creates tags only when not a near-duplicate', async () => {
     const { app } = makeTestApp();
     const { member } = await createMember(app, 'Issac');

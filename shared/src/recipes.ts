@@ -82,7 +82,7 @@ export const Ingredient = z.object({
   quantity: z.number().nonnegative().max(100_000).nullable().describe('Amount for the recipe as written; null when not measured'),
   unit: z.string().trim().max(40).default('').describe('e.g. g, ml, tbsp, cloves, "a pinch"'),
   name: z.string().trim().min(1, 'Name the ingredient').max(120),
-  note: z.string().trim().max(200).default('').describe('e.g. "finely chopped", brand advice'),
+  note: z.string().trim().max(200).default('').describe('Short description of the item only: "diced", "about 1.4 kg", brand. Actions (wash, soak, reserve) belong in a preparation step'),
 });
 export type Ingredient = z.infer<typeof Ingredient>;
 
