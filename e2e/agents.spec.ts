@@ -14,6 +14,10 @@ test('AI agent: create a key, add a recipe over MCP, review it, revoke the key',
   await expect(setup.getByText(/claude mcp add --transport http wecooked .*\/mcp --header "Authorization: Bearer wc_/)).toBeVisible();
   await setup.getByRole('tab', { name: 'Codex CLI' }).click();
   await expect(setup.getByText(/bearer_token_env_var = "WECOOKED_KEY"/)).toBeVisible();
+  await setup.getByRole('tab', { name: 'Antigravity' }).click();
+  await expect(setup.getByText('~/.gemini/config/mcp_config.json')).toBeVisible();
+  await expect(setup.getByText(/"serverUrl": ".*\/mcp"/)).toBeVisible();
+  await setup.getByRole('tab', { name: 'Codex CLI' }).click();
   await shot(page, 'api-key-created');
 
   // The real MCP client, as Claude Code would use it.

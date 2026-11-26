@@ -9,6 +9,7 @@ export function instructions(houseRules: string): string {
     '2. list_tags and use only existing tag ids. Do not invent tags; only call create_tag if one is clearly missing and the user agreed.',
     '3. Show the user the recipe you are about to add (title, tags, ingredients, steps) and wait for their OK before calling create_recipe. Skip this only if the user has clearly said to import directly without review.',
     '4. create_recipe with steps split into "preparation" and "cooking", and structured ingredients (numeric quantity, short unit, name, note).',
+    'Stay true to the source. If you cannot check part of it (e.g. a video with no captions or transcript that you cannot watch or hear), do not fill the gaps with guessed steps, times or ingredients: tell the user which parts you could not verify and ask them.',
     'Ingredient notes are only a short description of the item ("diced", "about 1.4 kg"). Anything to DO (wash, soak, cut, reserve) goes in a preparation step. If a result has warnings, fix them with update_recipe.',
     'Notes and ratings: the Notes under a recipe are for tips, how it turned out and what to change next time. get_recipe shows them; read them first. Add one with add_comment. Add a rating (hearts, 1–5) only when the person told you theirs, never a guess. A fix to the method itself goes in update_recipe, not in a note.',
     'To suggest what to cook, search_recipes shows rating, times cooked and last cooked, and can sort by highest_rated or not_cooked_lately.',
@@ -56,6 +57,7 @@ export function guide(houseRules: string): string {
 
 ## Before creating anything
 - Let the user review first. Show the draft recipe in plain language (title, tags, servings, ingredients, preparation and cooking steps, source link) and ask if it is good to add. Only call create_recipe after they agree, applying any changes they ask for. The exception: the user clearly said to import directly with no review (e.g. "just import it", "no need to check"). One such instruction covers that request only, not later ones, unless they say it applies to all.
+- Stay true to the source. Take quantities, order, heat, times and details (lid on or off, which oil) from what the source actually says. If you cannot check part of it (e.g. a video with only an ingredient list in its description, and no captions or transcript you can read, and you cannot watch or hear it), do not write plausible steps from the ingredient list. Tell the user which steps, times or amounts you could not verify, and ask them to fill them in or confirm before you add the recipe.
 - search_recipes with the dish name (English and the other language). If a match exists, update it instead.
 - list_tags and pick tag ids from the existing groups (e.g. Protein, Meal, Cuisine). Never invent ids.
 - Only call create_tag when a tag is clearly missing AND the user agreed. It refuses near-duplicates unless confirmNew is true.
@@ -78,8 +80,8 @@ export function guide(houseRules: string): string {
 - description: one or two short sentences saying what the dish is and what is special about it. Do not repeat what the steps say.
 
 ## Photos
-- After create_recipe, add a cover photo if you have one:
-  - from a web page or video: set_recipe_photo_from_url (YouTube: https://i.ytimg.com/vi/<videoId>/maxresdefault.jpg);
+- After create_recipe, add a cover photo if you have one. Do the same when you update a recipe whose coverPhoto is null and the source has a photo:
+  - from a web page or video: set_recipe_photo_from_url (YouTube: https://i.ytimg.com/vi/<videoId>/maxresdefault.jpg; older videos may not have that size, so if it fails use https://i.ytimg.com/vi/<videoId>/hqdefault.jpg);
   - from a file on the user's computer: get_photo_upload_link, then run the curl command it returns with the real file path.
 
 ## After creating
@@ -102,7 +104,7 @@ Every recipe has Notes (a thread of "notes from the kitchen"). get_recipe return
 - Check get_meal_plan before suggesting, and do not suggest what is already planned or an "away" day. Use add_plan_entry only when the person agreed.
 ${houseRules.trim() ? `\n## House rules from the household (these override the above)\n${houseRules.trim()}\n` : ''}
 ## Worked example (tag ids are placeholders; use list_tags)
-The example shows the structure only. Its languages are illustrative: the titles, names, steps and notes must follow the house rules above where they say otherwise.
+The example shows the structure only. Do not copy its languages: if the house rules above set a different language for the title, other name, ingredient names, section names, steps or notes, use theirs. For example, if they want the title in Chinese and the English name in otherName, swap them from what the example shows, and write ingredient names and steps in that language too.
 \`\`\`json
 ${JSON.stringify(EXAMPLE, null, 2)}
 \`\`\`

@@ -37,7 +37,7 @@ function CopyBlock({ text, label }: { text: string; label: string }) {
 /** How to connect each agent, with the new key filled in. */
 function Setup({ created }: { created: ApiKeyCreated }) {
   const url = `${window.location.origin}/mcp`;
-  const [tab, setTab] = useState<'claude' | 'codex' | 'gemini'>('claude');
+  const [tab, setTab] = useState<'claude' | 'codex' | 'gemini' | 'antigravity'>('claude');
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-accent-soft p-4" role="status">
       <div>
@@ -46,7 +46,7 @@ function Setup({ created }: { created: ApiKeyCreated }) {
       </div>
       <CopyBlock label="API key" text={created.key} />
       <div role="tablist" aria-label="Connect an agent" className="flex gap-1">
-        {(['claude', 'codex', 'gemini'] as const).map((t) => (
+        {(['claude', 'codex', 'gemini', 'antigravity'] as const).map((t) => (
           <button
             key={t}
             type="button"
@@ -55,7 +55,7 @@ function Setup({ created }: { created: ApiKeyCreated }) {
             onClick={() => setTab(t)}
             className={`cursor-pointer rounded-lg px-3 py-1.5 text-[13px] font-semibold ${tab === t ? 'bg-surface text-ink shadow-sm' : 'text-accent-ink'}`}
           >
-            {t === 'claude' ? 'Claude Code' : t === 'codex' ? 'Codex CLI' : 'Gemini CLI'}
+            {t === 'claude' ? 'Claude Code' : t === 'codex' ? 'Codex CLI' : t === 'gemini' ? 'Gemini CLI' : 'Antigravity'}
           </button>
         ))}
       </div>
@@ -70,6 +70,13 @@ function Setup({ created }: { created: ApiKeyCreated }) {
         <CopyBlock
           label="Add to ~/.gemini/settings.json"
           text={JSON.stringify({ mcpServers: { wecooked: { httpUrl: url, headers: { Authorization: `Bearer ${created.key}` } } } }, null, 2)}
+        />
+      )}
+      {tab === 'antigravity' && (
+        // Antigravity reads a different file than Gemini CLI, and wants "serverUrl" (not "httpUrl" or "url").
+        <CopyBlock
+          label="Add to ~/.gemini/config/mcp_config.json"
+          text={JSON.stringify({ mcpServers: { wecooked: { serverUrl: url, headers: { Authorization: `Bearer ${created.key}` } } } }, null, 2)}
         />
       )}
       <p className="text-[13px] text-accent-ink">Then ask the agent something like “Add this recipe to We Cooked: &lt;link or text&gt;”. Its recipes show “Added by AI · needs review” until someone checks them.</p>
