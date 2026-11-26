@@ -67,12 +67,14 @@ export interface McpContext {
   apiKey: CurrentApiKey;
   publicUrl: string;
   dataDir: string;
+  /** The running release, e.g. "v2.4.1" (or "dev" / a commit sha outside releases). */
+  version: string;
 }
 
 /** A fresh MCP server for one request, acting as the key's owner. */
-export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir }: McpContext): McpServer {
+export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir, version }: McpContext): McpServer {
   const houseRules = getSettings(db).aiRules;
-  const server = new McpServer({ name: 'we-cooked', version: '2.0.0' }, { instructions: instructions(houseRules) });
+  const server = new McpServer({ name: 'we-cooked', version: version.replace(/^v/, '') }, { instructions: instructions(houseRules) });
   const actor = { userId: user.id, apiKeyName: apiKey.name };
   const canWrite = apiKey.scope === 'write';
   const readOnly = () => fail('This API key is read-only. Create a read-write key on your Me page to make changes.');

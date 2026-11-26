@@ -88,7 +88,7 @@ export function createApp({ config, db }: AppDeps) {
     if (c.req.method !== 'POST') {
       return c.json({ error: 'Method not allowed. Use POST.' }, 405, { Allow: 'POST' });
     }
-    const server = buildMcpServer({ db, user: found.user, apiKey: found.apiKey, publicUrl: config.publicUrl, dataDir: config.dataDir });
+    const server = buildMcpServer({ db, user: found.user, apiKey: found.apiKey, publicUrl: config.publicUrl, dataDir: config.dataDir, version: config.version });
     const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     await server.connect(transport);
     try {

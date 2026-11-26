@@ -100,6 +100,8 @@ describe('MCP', () => {
     const { member } = await createMember(app, 'Issac');
     await member.patch('/api/settings', { aiRules: 'Titles in English, Chinese name as the other name.' });
     const { client, call } = await connect(app, await newKey(member));
+    // Reports the running release (tests run as "dev"), not a hard-coded number.
+    expect(client.getServerVersion()).toMatchObject({ name: 'we-cooked', version: 'dev' });
     expect(client.getInstructions()).toMatch(/search_recipes first/);
     expect(client.getInstructions()).toMatch(/wait for their OK before calling create_recipe/);
     expect(client.getInstructions()).toMatch(/Titles in English/);
