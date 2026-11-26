@@ -77,9 +77,22 @@ describe('API keys over REST', () => {
 describe('MCP', () => {
   it('refuses requests without a valid key', async () => {
     const { app } = makeTestApp();
-    const res = await app.request('/mcp', { method: 'POST', body: '{}', headers: { 'content-type': 'application/json' } });
-    expect(res.status).toBe(401);
-    expect(res.headers.get('www-authenticate')).toBe('Bearer');
+    for (const method of ['POST', 'GET']) {
+      const res = await app.request('/mcp', { method, ...(method === 'POST' && { body: '{}' }), headers: { 'content-type': 'application/json' } });
+      expect(res.status).toBe(401);
+      expect(res.headers.get('www-authenticate')).toBe('Bearer');
+    }
+  });
+
+  it('answers 405 to GET and DELETE, since it keeps no stream or session open', async () => {
+    const { app } = makeTestApp();
+    const { member } = await createMember(app, 'Issac');
+    const key = await newKey(member);
+    for (const method of ['GET', 'DELETE']) {
+      const res = await app.request('/mcp', { method, headers: { authorization: `Bearer ${key}`, accept: 'text/event-stream' } });
+      expect(res.status).toBe(405);
+      expect(res.headers.get('allow')).toBe('POST');
+    }
   });
 
   it('sends the workflow and house rules on connect, and lists the tools', async () => {
