@@ -115,6 +115,11 @@ describe('MCP', () => {
     const guide = await call('get_guide');
     expect(guide.text).toMatch(/"section": "preparation"/);
     expect(guide.text).toMatch(/Titles in English/);
+    // Agents must not invent what they could not check, and should fill a missing cover photo.
+    expect(client.getInstructions()).toMatch(/do not fill the gaps with guessed steps/);
+    expect(guide.text).toMatch(/could not verify/);
+    expect(guide.text).toMatch(/coverPhoto is null/);
+    expect(guide.text).toMatch(/hqdefault\.jpg/);
   });
 
   it('creates a recipe the household format way, refusing duplicates and made-up tags', async () => {

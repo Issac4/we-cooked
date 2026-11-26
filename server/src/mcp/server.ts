@@ -214,7 +214,7 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir, version }
     'update_recipe',
     {
       title: 'Update a recipe',
-      description: 'Replace a recipe’s content (call get_recipe first and send the whole recipe back with your changes; leave out the notes field). The cover photo is kept. Marks it "needs review". Same rule as create_recipe: instructions belong in steps, not ingredient notes.',
+      description: 'Replace a recipe’s content. Call get_recipe first and send the whole recipe back with your changes: turn its tags into tagIds (just the ids), and leave out the read-only fields (id, url, coverPhoto, notes, rating, collections, createdAt/updatedAt, createdBy/updatedBy, needsReview, aiKeyName). The cover photo is kept; if it is null, add one with set_recipe_photo_from_url. Marks it "needs review". Same rule as create_recipe: instructions belong in steps, not ingredient notes.',
       inputSchema: { id: z.number().int(), recipe: AgentRecipe },
     },
     async ({ id, recipe }) =>
@@ -241,7 +241,7 @@ export function buildMcpServer({ db, user, apiKey, publicUrl, dataDir, version }
     {
       title: 'Set a recipe photo from a link',
       description:
-        'Download a photo from a public http(s) link (e.g. the image on a recipe page, or https://i.ytimg.com/vi/<videoId>/maxresdefault.jpg for a YouTube video) and make it the recipe’s cover. For a file on the user’s computer use get_photo_upload_link instead.',
+        'Download a photo from a public http(s) link (e.g. the image on a recipe page, or https://i.ytimg.com/vi/<videoId>/maxresdefault.jpg for a YouTube video, or hqdefault.jpg if that fails) and make it the recipe’s cover. For a file on the user’s computer use get_photo_upload_link instead.',
       inputSchema: { recipeId: z.number().int(), url: z.string().url().max(2000) },
     },
     async ({ recipeId, url }) =>
