@@ -83,6 +83,11 @@ export function createApp({ config, db }: AppDeps) {
     if (!found) {
       return c.json({ error: 'Missing or invalid API key. Create one on your Me page in We Cooked.' }, 401, { 'WWW-Authenticate': 'Bearer' });
     }
+    // Stateless: there is no long-lived stream to open (GET) or session to end
+    // (DELETE). The MCP spec says to answer 405 so clients carry on over POST.
+    if (c.req.method !== 'POST') {
+      return c.json({ error: 'Method not allowed. Use POST.' }, 405, { Allow: 'POST' });
+    }
     const server = buildMcpServer({ db, user: found.user, apiKey: found.apiKey, publicUrl: config.publicUrl, dataDir: config.dataDir });
     const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     await server.connect(transport);
